@@ -6,6 +6,7 @@
  */
 
 import java.lang.Math;
+import java.util.Stack;
 
 public class BaseConverter {
 
@@ -56,13 +57,22 @@ public class BaseConverter {
 
 
         System.out.println("Dec: " + dec);
-        System.out.println("Bin: " + toBin(dec));
-        System.out.println("Hex: " + toHex(dec));
-        System.out.println("Unary: " + toUni(dec));
+        System.out.println("Bin: " + decToBase(dec, 2));
+        System.out.println("Hex: " + decToBase(dec, 16));
+        System.out.println("Unary: " + decToBase(dec, 1));
 
 
     }//end main
 
+    /**
+     * Convert any String representation of a number in base 2,
+     * 10 or 16 to its decimal representation as an int
+     * @param num char array of the input number
+     * @param numLength the length of the String representation of the input
+     *                  number
+     * @param base the base the input number is currently in
+     * @return an int value of the input number
+     */
     public static int toDec(char[] num, int numLength, int base){
         int dec = 0;
 
@@ -82,8 +92,8 @@ public class BaseConverter {
             for (int i = 0; i < numLength - 1; i++){
 
                 //If a character in the initial number is higher is the ASCII
-                //character set than 9 (which is 57) then it is a letter representing
-                //10-15 in hex
+                //character set than 9 (which is 57) then it is a letter
+                // representing 10-15 in hex
                 if (num[i] > 57){
                     dec += (num[i] - 87) * 16^i;
                 }
@@ -97,22 +107,71 @@ public class BaseConverter {
         }
     }
 
-    public static String toUni(int dec){
+    /**
+     * Convert and integer to any base up to base 36
+     * @param dec the integer to be converted
+     * @param base  the base to be converted to
+     * @return the string representation of the converted value
+     */
+    public static String decToBase(int dec, int base){
+
+        //The algorithm used here produces the values in reverse order so use
+        // a stack to reverse the revere order yielding the proper order
+        Stack<Character> reversedNumber = new Stack<Character>();
         String number = "";
 
-        for (int i = dec; i > 0; i--){
-            number += '|';
+        if (base == 1){
+            for (int i = dec; i > 0; i--){
+                number += '|';
+            }
+
+            return number;
+        }
+
+        while (dec/base != 0){
+            reversedNumber.push(intToHex(dec % base));
+            dec /= base;
+        }
+
+        //Add the final remainder to the hex value
+        reversedNumber.push(intToHex(dec));
+
+        while (!reversedNumber.isEmpty())
+            number += reversedNumber.pop();
+
+        if (base == 2){
+            String padding = "";
+
+            for (int i = number.length(); i < 16; i++)
+                padding += '0';
+
+            number = padding + number;
+        }
+
+        if (base == 16){
+            String padding = "";
+
+            for (int i = number.length(); i < 4; i++)
+                padding += '0';
+
+            number = padding + number;
         }
 
         return number;
     }
 
-    public static String toHex(int dec){
-        return "";
-    }
+    /**
+     * Returns the ASCII/UTF-8 character value for the given integer
+     * Will work for any base up to base 36.
+     * @param num the integer to be converted
+     * @return the character representation of the input integer
+     */
+    public static char intToHex(int num){
+        //TODO implement for uppercase letters also
 
-    public static String toBin(int dec){
-
-        return "";
+        if (num < 10)
+            return (char)(num + 48);
+        else
+            return (char)(num + 87);
     }
 }//end BaseConverter
