@@ -89,18 +89,21 @@ public class BaseConverter {
         //Base 16
         //TODO implement for uppercase letters also
         else{
-            for (int i = 0; i < numLength - 1; i++){
+            int position = 0;
+            for (int power = numLength - 1; power >= 0; power--){
 
-                //If a character in the initial number is higher is the ASCII
+                //If a character in the initial number is higher in the ASCII
                 //character set than 9 (which is 57) then it is a letter
                 // representing 10-15 in hex
-                if (num[i] > 57){
-                    dec += (num[i] - 87) * 16^i;
+                if (num[position] > 57){
+                    dec += (num[position] - 87) * Math.pow(base, power);
                 }
 
                 //Its just a normal base 10 number
                 else
-                    dec += (num[i] - 48) * 16^i;
+                    dec += (num[position] - 48) * Math.pow(base, power);
+
+                position++;
             }
 
             return dec;
