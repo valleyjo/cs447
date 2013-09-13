@@ -12,7 +12,7 @@ public class BaseConverter {
 
     public static void main(String[] args){
 
-        char[] num;
+        char[] num = new char[15];
         int numLength;
         int base;
         int dec = 0;
@@ -46,15 +46,10 @@ public class BaseConverter {
         }
 
         //If the number is a bin or hex, store it's characters in an array
-        else{
-            num = new char[16];
-            for (int i = 0; i < numLength; i++){
-                num[i] = args[0].charAt(i);
-            }
+        else
+            num = args[0].toCharArray();
 
-            dec = toDec(num, numLength, base);
-        }
-
+        dec = toDec(num, numLength, base);
 
         System.out.println("Dec: " + dec);
         System.out.println("Bin: " + decToBase(dec, 2));
@@ -75,39 +70,22 @@ public class BaseConverter {
      */
     public static int toDec(char[] num, int numLength, int base){
         int dec = 0;
+        int position = 0;
 
-        //If binary
-        if (base == 2){
-            int position = 0;
-            for (int power = numLength - 1; power >= 0; power--){
-                dec += (num[position] - 48) * (Math.pow(base, power));
-                position++;
-            }
-            return dec;
-        }
-
-        //Base 16
-        //TODO implement for uppercase letters also
-        else{
-            int position = 0;
-            for (int power = numLength - 1; power >= 0; power--){
-
-                //If a character in the initial number is higher in the ASCII
-                //character set than 9 (which is 57) then it is a letter
-                // representing 10-15 in hex
-                if (num[position] > 57){
-                    dec += (num[position] - 87) * Math.pow(base, power);
-                }
-
-                //Its just a normal base 10 number
-                else
-                    dec += (num[position] - 48) * Math.pow(base, power);
-
-                position++;
+        for (int power = numLength - 1; power >= 0; power--){
+            if (num[position] > 57){
+                num[position] = Character.toLowerCase(num[position]);
+                dec += (num[position] - 87) * Math.pow(base, power);
             }
 
-            return dec;
+            //Its just a normal base 10 number
+            else
+                dec += (num[position] - 48) * Math.pow(base, power);
+
+            position++;
         }
+
+        return dec;
     }
 
     /**
