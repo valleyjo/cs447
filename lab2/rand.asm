@@ -28,16 +28,17 @@ syscall
 
 # generate 10 random integers in the range 100 from the 
 # seeded generator (whose id is 1)
-li	$t2, 101		# max number of iterations + 1
+li	$t2, 6		# max number of iterations + 1
 li	$t3, 0		# current iteration number
 
 LOOP:
 li	$a0, 1		# as said, this id is the same as random generator id
-li	$a1, 11		# upper bound of the range
+li	$a1, 4		# upper bound of the range
 li	$v0, 42		# load the random number generator call
 syscall			# get the random number
 
 # $a0 now holds the random number
+addi 	$a0, $a0, 1	# add 1 to the random number so that it is [1,4]
 
 # loop terminating condition
 addi	$t3, $t3, 1	# increment the number of iterations

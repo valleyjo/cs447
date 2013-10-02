@@ -28,11 +28,12 @@ li	$v0, 40		# seed random number generator syscall
 syscall
 
 li	$a0, 1		# as said, this id is the same as random generator id
-li	$a1, 11		# upper bound of the range
+li	$a1, 10		# upper bound of the range
 li	$v0, 42		# load the instruction for get ranndom number
 syscall			# get the random number
 
 # $a0 now holds the random number
+addi	$a0, $a0, 1	# add 1 to the number so it is [1,10]
 
 move 	$t0, $a0	# copy the random number to $t0
 li	$t9, 1		# load 1 in $t9 to use as comparison for the bew & slt combo
