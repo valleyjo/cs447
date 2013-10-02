@@ -3,6 +3,10 @@
 # Date: 9/20/2013
 # Project: Lab 2
 
+.data
+	msg_lower: 	.asciiz "Guess lower"
+	msg_higher: 	.asciiz "Guess higher"
+
 .text
 ##############################################################################
 # seed the random number generator
@@ -20,13 +24,18 @@ move 	$a1, $t0	# seed from time
 li	$v0, 40		# seed random number generator syscall
 syscall
 
-# Get the random number
 li	$a0, 1		# as said, this id is the same as random generator id
-li	$a1, 5		# upper bound of the range
-li	$v0, 42		# random int range
-syscall
+li	$a1, 11		# upper bound of the range
+li	$v0, 42		# load the instruction for get ranndom number
+syscall			# get the random number
 
 # $a0 now holds the random number
+
+move 	$t0, $a0	# copy the random number to $t0
+
+
+
+
 # print it
 li	$v0, 1		# print integer syscall
 syscall
