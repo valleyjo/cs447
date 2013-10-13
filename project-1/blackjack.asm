@@ -1,6 +1,6 @@
 .data
 	msg_hit_stand:		.asciiz "\n\nWould you like to \"hit\" or \"stand\"? "
-	msg_exit:		.asciiz "\n\nI don't always waste money, but when I do it's at Soaring Eagle's Casino!"
+	msg_exit:		.asciiz "\nI don't always waste money, but when I do it's at Soaring Eagle's Casino!\n"
 	msg_welcome:		.asciiz "Welcome to Soraing Eagle's Casino \n"
 	msg_name_prompt:	.asciiz "Please enter your name: "
 	msg_dealer:		.asciiz "The dealer:\n" 
@@ -11,6 +11,7 @@
 	msg_blank_line:		.asciiz "\n"
 	msg_player_busted:	.asciiz "\n\nYou busted. Dealer wins :("
 	msg_play_again:		.asciiz "\nWould you like to play again? "
+	msg_dealer_busted:	.asciiz "\nThe dealer busted! You win :)"
 	player_name:		.asciiz
 	player_input:		.asciiz
 	player_continue:	.asciiz	
@@ -174,9 +175,19 @@ la	$a0, msg_player_busted		# if the player busted, tell them!
 li	$v0, 4
 syscall
 
-j PLAY_AGAIN				#Ask the player if they want to play again
+j 	PLAY_AGAIN				#Ask the player if they want to play again
 
 DEALER_BUST_CHECK:
+li	$t0, 21				# The value that represents being busted (21)
+blt	$s0, $t0, PLAYER_WIN_CHECK	# If the dealer did not bust, check if the player won
+
+la	$a0, msg_dealer_busted		# If dealer busted, tell the player
+li	$v0, 4
+syscall
+
+j	PLAY_AGAIN
+
+PLAYER_WIN_CHECK:
 
 PLAY_AGAIN:
 li	$v0, 4
