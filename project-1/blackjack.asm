@@ -9,8 +9,11 @@
 	msg_plus:		.asciiz " + "
 	msg_equals_sign:	.asciiz " = "
 	msg_blank_line:		.asciiz "\n"
+	msg_player_busted:	.asciiz "\n\nYou busted. Dealer wins :("
+	msg_play_again:		.asciiz "\nWould you like to play again? "
 	player_name:		.asciiz
-	player_input:		.asciiz	
+	player_input:		.asciiz
+	player_continue:	.asciiz	
 
 .text
 #------------------------------------------------------------------------------
@@ -142,14 +145,14 @@ li	$t0, 21				# The value that constitues a bust
 blt	$t0, $s1, CHECKS		# Branches to value checks if the player has busted
 
 PROMPT_HIT:
-la	$a0, msg_hit_stand		#Ask the user if he wants to hit
+la	$a0, msg_hit_stand		#Ask the user if they want to hit
 li	$v0, 4
 syscall
 
 la	$a0, player_input		# The start of the input buffer for the input string
 li	$a1, 20				# The maximum number of characters to read
 
-li	$v0, 8				# load read character syscall number			
+li	$v0, 8				# load read string syscall number			
 syscall					# Read the player's input (hit or stand)
 
 lb	$t0, player_input		# The first byte of player input
@@ -164,8 +167,34 @@ move	$s4, $t0			# $s4 now holds the value of the most recent card
 j	DEAL	
 
 CHECKS:
+li	$t0, 21				# holds the value that represents being busted (21)
+blt	$s1, $t0 DEALER_BUST_CHECK	# branch to check if the dealer busted if the player did not bust
 
-	
+la	$a0, msg_player_busted		# if the player busted, tell them!
+li	$v0, 4
+syscall
+
+j PLAY_AGAIN				#Ask the player if they want to play again
+
+DEALER_BUST_CHECK:
+
+PLAY_AGAIN:
+li	$v0, 4
+la	$a0, msg_play_again		#Ask the player if they want to play again
+syscall
+
+la	$a0, player_continue		# The start of the input buffer for the input string
+li	$a1, 20				# The maximum number of characters to read
+
+li	$v0, 8				# load read string syscall number			
+syscall					# Read the player's input (hit or stand)
+
+lb	$t0, player_continue		# load 'y' (ASCII 121) into $t0
+li	$t1, 121			# grab the first byte of input from the user
+
+beq	$t0, $t1, BEGIN_PLAY		# branch to the begining of the game if the player wants to play again 
+					# (i.e. entered input begining with y)
+					# otherwise fall through to exit
 
 #------------------------------------------------------------------------------
 # Tell MARS to exit the program
