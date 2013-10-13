@@ -66,8 +66,7 @@ jal	GET_CARD
 add	$s1, $s1, $t0			# The player has been given two cards to start
 move 	$s4, $t0			# Player's second card is held in $s4 (for display purposes)
 
-DEAL:
-
+DEAL:					# Presents an interface with the player's and dealer's score
 #------------------------------------------------------------------------------
 # Display the dealer's total
 # Output:
@@ -180,11 +179,15 @@ syscall			# print the exit string
 li	$v0, 10		# exit syscall
 syscall
 
-#------------------------------------------------------------------------------
-# Returns a card that was drawn from the deck
-# The card is put into $t0
-# Uses: $t0 $v0 $a0 $a1 $ra
-#------------------------------------------------------------------------------
+###############################################################################
+# This function similates drawing a card from a deck.
+# @return $t0 => the card that was drawn from the deck
+# @uses $t0
+#	$v0 
+#	$a0 
+#	$a1
+#	$ra
+###############################################################################
 GET_CARD:
 
 li	$a0, 1		# as said, this id is the same as random generator id
