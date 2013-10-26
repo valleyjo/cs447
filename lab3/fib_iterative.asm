@@ -1,8 +1,13 @@
 # Compute first twelve Fibonacci numbers and put in array, then print
       .data
-fibs: .word   0 : 12        # "array" of 12 words to contain fib values
+fibs: .word   0 : 50        # "array" of 12 words to contain fib values
 size: .word  12             # size of "array" 
       .text
+      
+      li	$v0, 5
+      syscall
+      move	$t7, $v0
+      
       la   $t0, fibs        # load address of array
       la   $t5, size        # load address of size variable
       lw   $t5, 0($t5)      # load array size
@@ -30,19 +35,15 @@ loop: lw   $t3, 0($t0)      # Get value from array F[n]
 space:.asciiz  " "          # space to insert between numbers
 head: .asciiz  "The Fibonacci numbers are:\n"
       .text
-print:add  $t0, $zero, $a0  # starting address of array
-      add  $t1, $zero, $a1  # initialize loop counter to array size
-      la   $a0, head        # load address of print heading
-      li   $v0, 4           # specify Print String service
-      syscall               # print heading
-out:  lw   $a0, 0($t0)      # load fibonacci number for syscall
-      li   $v0, 1           # specify Print Integer service
-      syscall               # print fibonacci number
-      la   $a0, space       # load address of spacer for syscall
-      li   $v0, 4           # specify Print String service
-      syscall               # output string
-      addi $t0, $t0, 4      # increment address
-      addi $t1, $t1, -1     # decrement loop counter
-      bgtz $t1, out         # repeat if not finished
-      jr   $ra              # return
+print:
+	la	$a3, fibs
+	li	$t2, 4
+	mult	$t7, $t2     # The offst for the fib number requested by the user
+	mflo	$t3
+	add	$a3, $a3, $t3 # a3 = a3 + 4 * t7 Find where the nubmer is located in the array
+	addi	$a3, $a3, -8
+	lw   $a0, 0($a3)      # load fibonacci number for syscall
+      	li   $v0, 1           # specify Print Integer service
+      	syscall               # print fibonacci number
+      	jr   $ra              # return
 	
