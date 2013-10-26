@@ -32,8 +32,7 @@ draw_maze:
 	sw	$ra, 0($sp)
 	sw	$s0, 4($sp)
 	sw	$s1, 8($sp)
-	sw	$s2, 12($sp)
-	
+	sw	$s2, 12($sp)	
 
 	li	$s0, 0	
 rows:
@@ -47,12 +46,12 @@ cols:
 	move	$a2, $v0
 	jal	_setLED
 	
-	addi $s0, $s0, 1			# change the column
-	slti $t0, $s0, 8
+	addi $s1, $s1, 1			# change the column
+	slti $t0, $s1, 8
 	bne $t0, $zero, cols
 	
-	addi $s1, $s1, 1			# change the row
-	slti $t0, $s1, 8
+	addi $s0, $s0, 1			# change the row
+	slti $t0, $s0, 8
 	bne $t0, $zero, rows
 		
 	#---------
