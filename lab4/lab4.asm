@@ -26,23 +26,20 @@
 #---------------------------------------------------------------
 draw_maze:
 	# --------
-	# Epilogue
+	# Prologue
 	# --------
 	addi	$sp, $sp, -16
 	sw	$ra, 0($sp)
 	sw	$s0, 4($sp)
 	sw	$s1, 8($sp)
-	sw	$s2, 12($sp)	
+	sw	$s2, 12($sp)
 	
-	li	$s1, 8
-	li	$s1, 8
-	
-	rows:
-	li	$s0, 0
-	
-	cols:
+
+	li	$s0, 0	
+rows:
 	li	$s1, 0
 	
+cols:
 	move	$a0, $s0
 	move	$a1, $s1
 	
