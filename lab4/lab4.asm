@@ -1,8 +1,6 @@
 .data 
-	space: .asciiz " "
-	newline: .asciiz "\n"
 
-	maze: .word 	1,1,1,1,1,1,1,1,
+	maze: .byte 	1,1,1,1,1,1,1,1,
 			3,0,0,0,0,0,0,1,
 			1,1,1,1,1,1,0,1,
 			1,2,1,0,0,0,0,1,
@@ -20,7 +18,7 @@
 
 #---------------------------------------------------------------
 # void draw_maze()
-#   draws the maze on the screen
+#   draws the maze in the maze address on the screen
 #   
 # arguments: none
 # trashes: none
@@ -39,41 +37,34 @@ draw_maze:
 	li	$s0, 0	
 rows:
 	li	$s1, 0
-	
 cols:
+	
 	move	$a0, $s0
 	move	$a1, $s1
+	jal	address_in_maze_of
 	
-	jal	maze_value_at
+	move	$a0, $s1
+	move	$a1, $s0
+	
+
+	
 	move	$a2, $v0
 	jal	_setLED
 	
-	#-Debug print statement-
-	move	$a0, $a2
-	li	$v0, 1
-	syscall
-	
-	la	$a0, space
-	li	$v0, 4
-	syscall
-	#---------------------
-	
 	addi $s1, $s1, 1			# change the column
-	slti $t0, $s1, 8
-	bne $t0, $zero, cols
 	
-	#-Debug print statement-
-	la	$a0, newline
-	li	$v0, 4
-	syscall 
-	# ---------------------
+	slti $t0, $s1, 8
+	
+
+	
+	bne $t0, $zero, cols
 	
 	addi $s0, $s0, 1			# change the row
 	slti $t0, $s0, 8
 	bne $t0, $zero, rows
 		
 	#---------
-	# Prologue
+	# Epilogue
 	#---------
 	lw	$s2, 12($sp)
 	lw	$s1, 8($sp)
@@ -83,7 +74,7 @@ cols:
 	jr	$ra				# Return
 	
 #---------------------------------------------------------------
-# int maze_value_at(int x, int y)
+# int address_in_maze_of(int x, int y)
 #   returns the value of the maze array at the location (x, y)
 #
 #  warning:   x and y are assumed to be legal values (0-7,0-7)
@@ -91,15 +82,20 @@ cols:
 #  trashes:   $t0-$t3
 #  returns:   $v0 holds the value maze at the position
 #---------------------------------------------------------------
-maze_value_at:
-	# compute maze[x][y] = location of maze in memory + (x * sizeof(row) + y * sizeof(cell))
+address_in_maze_of:
 	la	$t0, maze
-	sll	$t1, $a0, 2
-	sll	$t2, $a1, 2
-	add	$t3, $t1, $t2
-	add	$t0, $t0, $t3
-	lb	$v0, 0($t0)
+	
+	sll	$a0, $a0, 3
+	
+	add 	$v0, $a0, $a1
+	
+	add 	$v0, $v0, $t0
+	
+	lb	$v0, 0($v0)
 	jr   	$ra
+	
+	
+	#y * 16 bytes + (x / 4)
 	
 #---------------------------------------------------------------
 # void _setLED(int x, int y, int color)
