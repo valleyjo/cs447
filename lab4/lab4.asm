@@ -1,6 +1,7 @@
 .data 
 
-	new_line: .asciiz	"\n"
+	msg_win:  .asciiz "Congratulations, you solved the maze!"
+	new_line: .asciiz "\n"
 
 	maze: .byte 	1,1,1,1,1,1,1,1,
 			3,0,0,0,0,0,0,1,
@@ -24,22 +25,169 @@ loop:	li	$a0, 200
 	syscall
 	
 	#-Debug-Print------------
-	addi	$s1, $s1, 1
-	li	$v0, 1
-	move	$a0, $s1
-	syscall			# print the iteration number
-	li	$v0, 4
-	la	$a0, new_line
-	syscall			# print a newline
+	#addi	$s1, $s1, 1
+	#li	$v0, 1
+	#move	$a0, $s1
+	#syscall			# print the iteration number
+	#li	$v0, 4
+	#la	$a0, new_line
+	#xsyscall			# print a newline
 	#------------------------
 	
 	jal	_getKeyPress	# get the pressed key from the user
-	addi	$s0, $0, 0x42	# load the value of the center button
-	beq	$v0, $s0, exit	# if the key-press is the center button exit!
+	beq	$v0, 0x42, exit	# if the key-press is the center button exit!
 	
-	j	loop
+	beq $v0, 0xE1, down #DOWN
+	beq $v0, 0xE2, left #LEFT
+	beq $v0, 0xE3, right #RIGHT
+	
+	
+continue:	j	loop
 
 exit:	li $v0, 10
+	syscall
+
+up:	move $a0, $s0
+	move $a1, $s1
+	jal _getLED
+	
+	
+	addi $t1, $a0, 0
+	addi $t2, $a1, -1
+	
+	move $a0, $t1
+	move $a1, $t2
+	jal _getLED
+	move $t4, $v0 #    T3 = new number
+	
+	beq $t4, 1, kill_move
+	
+	move $a0, $s0
+	move $a1, $s1
+	li $a2, 0
+	jal _setLED
+	
+	addi $s0, $s0, 0
+	addi $s1, $s1, -1
+	
+	move $a0, $s0
+	move $a1, $s1
+	li   $a2, 3 
+	jal _setLED
+	
+	beq $t4, 2, end_game
+	j continue
+	
+right:	move $a0, $s0
+	move $a1, $s1
+	jal _getLED
+	
+	
+	addi $t1, $a0, 1
+	addi $t2, $a1, 0
+	
+	move $a0, $t1
+	move $a1, $t2
+	jal _getLED
+	move $t4, $v0 #    T3 = new number
+	
+	beq $t4, 1, kill_move
+	
+	move $a0, $s0
+	move $a1, $s1
+	li $a2, 0
+	jal _setLED
+	
+	addi $s0, $s0, 1
+	addi $s1, $s1, 0
+	
+	move $a0, $s0
+	move $a1, $s1
+	li   $a2, 3 
+	jal _setLED
+	
+	beq $t4, 2, end_game
+	j continue
+	
+down: 	move $a0, $s0
+	move $a1, $s1
+	jal _getLED
+	
+	addi $t1, $a0, 0
+	addi $t2, $a1, 1
+	
+	move $a0, $t1
+	move $a1, $t2
+	jal _getLED # What's the number I'm moving to?
+	
+	move $t4, $v0 #    T3 = new number
+	
+	
+	beq $t4, 1, kill_move
+	
+	
+	move $a0, $s0
+	move $a1, $s1
+	li $a2, 0
+	jal _setLED
+	
+	addi $s0, $s0, 0
+	addi $s1, $s1, 1
+	
+	move $a0, $s0
+	move $a1, $s1
+	li   $a2, 3 
+	jal _setLED
+	
+	beq $t4, 2, end_game
+	j continue
+	
+left:	move $a0, $s0
+	move $a1, $s1
+	jal _getLED
+	
+	
+	addi $t1, $a0, -1
+	
+	blt $t1, 0, kill_move
+	
+	
+	addi $t2, $a1, 0
+	
+	move $a0, $t1
+	move $a1, $t2
+	jal _getLED
+	
+	move $t4, $v0 #    T3 = new number
+	
+	beq $t4, 1, kill_move
+	
+	move $a0, $s0
+	move $a1, $s1
+	li $a2, 0
+	jal _setLED
+	
+	addi $s0, $s0, -1
+	addi $s1, $s1, 0
+	
+	move $a0, $s0
+	move $a1, $s1
+	li   $a2, 3 
+	jal _setLED
+	
+	beq $t4, 2, end_game
+	j continue
+	
+kill_move:
+	j continue
+	
+	
+end_game:
+	la $a0, msg_win
+	li $v0, 4
+	syscall
+	
+	li $v0, 10
 	syscall
 
 #---------------------------------------------------------------
