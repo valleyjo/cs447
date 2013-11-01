@@ -1,5 +1,7 @@
 .data 
 
+	new_line: .asciiz	"\n"
+
 	maze: .byte 	1,1,1,1,1,1,1,1,
 			3,0,0,0,0,0,0,1,
 			1,1,1,1,1,1,0,1,
@@ -11,9 +13,33 @@
 			
 .text
 
-	jal	draw_maze
+	jal	draw_maze	# Draw the initial maze
+	
+	addi	$s0, $0, 0	# Ensure the registers we're gonna use are set to 0
+	addi	$s1, $0, 0
+	
+	# pause for 200 miliseconds to reduce CPU requirements of the game
+loop:	li	$a0, 200
+	li	$v0, 32
+	syscall
+	
+	#-Debug-Print------------
+	addi	$s1, $s1, 1
+	li	$v0, 1
+	move	$a0, $s1
+	syscall			# print the iteration number
+	li	$v0, 4
+	la	$a0, new_line
+	syscall			# print a newline
+	#------------------------
+	
+	jal	_getKeyPress	# get the pressed key from the user
+	addi	$s0, $0, 0x42	# load the value of the center button
+	beq	$v0, $s0, exit	# if the key-press is the center button exit!
+	
+	j	loop
 
-	li $v0, 10
+exit:	li $v0, 10
 	syscall
 
 #---------------------------------------------------------------
@@ -21,18 +47,17 @@
 #   draws the maze in the maze address on the screen
 #   
 # arguments: none
-# trashes: none
+# trashes: $t0
 # returns: none
 #---------------------------------------------------------------
 draw_maze:
 	# --------
 	# Prologue
 	# --------
-	addi	$sp, $sp, -16
+	addi	$sp, $sp, -12
 	sw	$ra, 0($sp)
 	sw	$s0, 4($sp)
-	sw	$s1, 8($sp)
-	sw	$s2, 12($sp)	
+	sw	$s1, 8($sp)	
 
 	li	$s0, 0	
 rows:
@@ -46,16 +71,12 @@ cols:
 	move	$a0, $s1
 	move	$a1, $s0
 	
-
-	
 	move	$a2, $v0
 	jal	_setLED
 	
 	addi $s1, $s1, 1			# change the column
 	
 	slti $t0, $s1, 8
-	
-
 	
 	bne $t0, $zero, cols
 	
@@ -66,11 +87,10 @@ cols:
 	#---------
 	# Epilogue
 	#---------
-	lw	$s2, 12($sp)
 	lw	$s1, 8($sp)
 	lw	$s0, 4($sp)
 	lw	$ra, 0($sp)
-	addi	$sp, $sp, 16
+	addi	$sp, $sp, 12
 	jr	$ra				# Return
 	
 #---------------------------------------------------------------
@@ -159,18 +179,19 @@ _getLED:
 	jr   $ra
 
 
-	# int _getKeyPress(void)
-	#	returns the key last pressed, unless there is none
-	#
-	# trashes: $t0-$t1
-	# returns in $v0:
-	#	0	No key pressed
-	# 	0x42	Middle button pressed
-	# 	0xE0	Up arrow 
-	# 	0xE1	Down arrow 
-	# 	0xE2	Left arrow 
-	# 	0xE3 Right arrow
-	#
+#---------------------------------------------------------------
+# int _getKeyPress(void)
+#	returns the key last pressed, unless there is none
+#
+# trashes: $t0-$t1
+# returns in $v0:
+#	0	No key pressed
+# 	0x42	Middle button pressed
+# 	0xE0	Up arrow 
+# 	0xE1	Down arrow 
+# 	0xE2	Left arrow 
+# 	0xE3 Right arrow
+#---------------------------------------------------------------
 _getKeyPress:
 	la	$t1, 0xffff0000			# status register
 	li	$v0, 0				# default to no key pressed
