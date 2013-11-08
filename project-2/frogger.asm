@@ -74,9 +74,58 @@ main:
 	
 	jal	draw_field
 	
+game_loop:	
+	jal	_getKeyPress
 	
+	move	$t0, $v0
+	li	$t1, 0x42
+	beq	$t0, $t1, exit		# if the user pressed the center button,
+					# exit
 	
-	li	$v0, 10
+	beqz	$t0, game_loop		# if the user entered nothing, continue
+					# with the game 
+	
+move_left:
+	li	$t1, 0xE2
+	bne	$t0, $t1, move_right	# proceed only if the user pressed the
+					# 'move left' button
+	
+	li	$v0, 1
+	li	$a0, 1
+	syscall
+	
+	j	game_loop
+	
+move_right:
+	li	$t1, 0xE3
+	bne	$t0, $t1 move_up	# proceed only if the user pressed the
+					# 'move right' button
+	li	$v0, 1
+	li	$a0, 2
+	syscall
+	
+	j	game_loop
+
+move_up:
+	li	$t1, 0xE0
+	bne	$t0, $t1 move_down	# proceed only if the user pressed the
+					# 'move up' button
+	li	$v0, 1
+	li	$a0, 3
+	syscall
+	
+	j	game_loop
+	
+move_down:
+	# proceed only if the user pressed the 'move down' button. At this point,
+	# down is the only non-checked value, so it must be down.
+	li	$v0, 1
+	li	$a0, 4
+	syscall
+	
+	j	game_loop
+	
+exit:	li	$v0, 10
 	syscall
 
 #------------------------------------------------------------------------------               
@@ -88,13 +137,14 @@ main:
 # returns: none
 #------------------------------------------------------------------------------
 draw_field:
-	# --------
+	# -------------------
 	# Prologue
-	# --------
+	# -------------------
 	addi	$sp, $sp, -12
 	sw	$ra, 0($sp)
 	sw	$s0, 4($sp)
 	sw	$s1, 8($sp)	
+	# -------------------
 
 	li	$s0, 0	
 rows:
@@ -111,14 +161,15 @@ cols:
 	move	$a2, $v0
 	jal	_setLED
 	
-	addi $s1, $s1, 1			# change the column
+	addi $s1, $s1, 1		# change the column
 	
-	slti $t0, $s1, 64
-	
+	slti $t0, $s1, 64		# THIS VALUE MUST BE CHANGED TO:
+						# number of columns in array
 	bne $t0, $zero, cols
 	
-	addi $s0, $s0, 1			# change the row
-	slti $t0, $s0, 64
+	addi $s0, $s0, 1		# change the row
+	slti $t0, $s0, 64		# THIS VALUE MUST BE CHANGED TO:
+						# number of rows in array
 	bne $t0, $zero, rows
 		
 	#---------
@@ -128,7 +179,7 @@ cols:
 	lw	$s0, 4($sp)
 	lw	$ra, 0($sp)
 	addi	$sp, $sp, 12
-	jr	$ra				# Return
+	jr	$ra			# Return
 	
 #------------------------------------------------------------------------------
 # int address_in_array_of(int x, int y)
@@ -143,7 +194,7 @@ address_in_array_of:
 	la	$t0, array
 	
 	sll	$a0, $a0, 6	# THIS VALUE MUST BE CHANGED TO: 
-				#	   		log2(array_dimension)
+				#	   	log2(number_of_array_columns)
 	
 	add 	$v0, $a0, $a1
 	
@@ -228,7 +279,7 @@ _getLED:
 # 	0xE0	Up arrow 
 # 	0xE1	Down arrow 
 # 	0xE2	Left arrow 
-# 	0xE3 Right arrow
+# 	0xE3 	Right arrow
 #------------------------------------------------------------------------------
 _getKeyPress:
 	la	$t1, 0xffff0000			# status register
