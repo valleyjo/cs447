@@ -65,8 +65,8 @@ array:	.byte
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0	
 
-row1_color:	1
-ro11_size:	12
+stone1_color:	.byte 2
+stone1_length:	.byte 12
 
 .text
 
@@ -102,9 +102,9 @@ main:
 	jal	draw_field
 	
 game_loop:	 
-	#li	$a0, 200
-	#li	$v0, 32
-	#syscall				# Pause for 200 miliseconds
+	li	$a0, 200
+	li	$v0, 32
+	syscall				# Pause for 200 miliseconds
 	
 	jal	_getKeyPress
 	
@@ -114,9 +114,10 @@ game_loop:
 					# exit
 	
 	# perform all game operations (generate stones, move stones, etc)
-	li	$a0, 30
-	li	$a1, 2
-	jal	move_right
+	li	$a0, 50
+	la	$a1, stone1_length
+	la	$a2, stone1_color
+	jal	move_stone_right
 	
 	
 	beqz	$s2, game_loop		# if the user entered nothing, continue
@@ -163,6 +164,99 @@ input_move_down:
 exit:	li	$v0, 10
 	syscall
 
+#------------------------------------------------------------------------------               
+# void move_stone_right(int row, int address_of_stone_length, int address_of_color)
+#   move a stone with length 'length' to the right one pixel
+#	$a0 = row, $a1 = row length, $a2 = address of color to introduce into the playing field
+#
+#  Register usages:
+#    $s2 = row length
+#    $s3 = address of the new color value. Gets updated at the end to be 1 (lava).
+#
+# arguments: $a0 the row to move, $a1 the color to add
+# trashes: $t0, $s2, $s3
+# returns: none
+#------------------------------------------------------------------------------
+move_stone_right:
+	
+	# --------
+	# Prologue
+	# --------
+	addi	$sp, $sp -16
+	sw	$ra, 0($sp)
+	sw	$s2, 4($sp)
+	sw	$s3, 8($sp)
+	sw	$s4, 12($sp)
+	
+	lb	$s2, 0($a1)	# $s2 = stone_length
+	addi	$t0, $s2, -1
+	sb	$t0, 0($a1)
+	
+	lb	$s3, 0($a2)	# load the value of the new color as a constant argument for the movement of
+				# the stone
+	move	$s4, $a0
+				
+	beq	$t0, $0, change_color
+
+#move_stone_right_loop:	# when every pixel i nthe stone's length has been shifted over once, we branch
+#	beqz	$s2, move_stone_right_end
+	
+	addi	$a0, $s4, 0	# load the initial row number
+	move	$a1, $s3	# load the color into $a1
+	jal	move_right	# move row $a0 over 1 and use $a1 as the new color
+	
+	addi	$s4, $s4, 1	# increase the row number by 1
+	move	$a0, $s4	# load the row number + 1 into $a1
+	move	$a1, $s3	# load the color into $a1
+	jal	move_right	# move row $a0 + 1 over 1 and use $a1 as the new color
+
+	addi	$s4, $s4, 1	# increase the row number by 1
+	move	$a0, $s4	# load the row number + 1 into $a1
+	move	$a1, $s3	# load the color into $a1
+	jal	move_right	# move row $a0 + 2 over 1 and use $a1 as the new color
+	
+	addi	$s4, $s4, 1	# increase the row number by 1
+	move	$a0, $s4	# load the row number + 1 into $a1
+	move	$a1, $s3	# load the color into $a1
+	jal	move_right	# move row $a0 + 3 over 1 and use $a1 as the new color
+	
+	addi	$s4, $s4, 1	# increase the row number by 1
+	move	$a0, $s4	# load the row number + 1 into $a1
+	move	$a1, $s3	# load the color into $a1
+	jal	move_right	# move row $a0 + 4 over 1 and use $a1 as the new color
+	
+	addi	$s4, $s4, 1	# increase the row number by 1
+	move	$a0, $s4	# load the row number + 1 into $a1
+	move	$a1, $s3	# load the color into $a1
+	jal	move_right	# move row $a0 + 5 over 1 and use $a1 as the new color
+	
+	
+	addi	$s2, $s2, -1	# decrease the length remaining of the rock
+				# when this values reaches 0, all rows of the rock will be completly 
+				# shifted over by 1 pixel
+
+	#j	move_stone_right_loop
+	j	move_stone_right_end
+	
+
+	# the rock has been fully introduced onto the screen, set the new color value to be 1 for lava
+	# consequentially in further movements, the lava will be moving over by 1 and appear to remain
+	# constant
+change_color:
+	li	$t0, 1
+	sb	$t0, 0($a2)
+
+move_stone_right_end:
+	# --------
+	# Epilogue
+	# --------
+	lw	$ra, 0($sp)
+	lw	$s2, 4($sp)
+	lw	$s3, 8($sp)
+	lw	$s4, 12($sp)
+	addi	$sp, $sp, 12
+	
+	jr	$ra
 
 #------------------------------------------------------------------------------               
 # void move_right(int row, int new_pixel)
