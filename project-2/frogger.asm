@@ -65,8 +65,9 @@ array:	.byte
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0	
 
-stone1_color:	.byte 2
-stone1_length:	.byte 12
+stone1_velocity: .byte 3
+stone1_color:	 .byte 2
+stone1_length:	 .byte 12
 
 .text
 
@@ -114,10 +115,23 @@ game_loop:
 					# exit
 	
 	# perform all game operations (generate stones, move stones, etc)
-	li	$a0, 50
-	la	$a1, stone1_length
-	la	$a2, stone1_color
-	jal	move_stone_right
+	
+	lb	$s2, stone1_velocity	#load the velocity of stone 1 into $s2
+
+stone1_velocity_loop:
+	beqz	$s2, stone2_velocity_loop # if the stone has already moved over 'velocity' times,
+					# begin to move stone 2
+
+	li	$a0, 50			# load the top row of stone 1
+	la	$a1, stone1_length	# load the length of stone 1
+	la	$a2, stone1_color	# load the color of stone 1 (will be red when no stone is being generated)
+	jal	move_stone_right	# move the entire stone right by one pixel
+	addi	$s2, $s2, -1		# subtract 1 from the velocity and do it again!
+	j	stone1_velocity_loop
+	
+	
+stone2_velocity_loop:
+	
 	
 	
 	beqz	$s2, game_loop		# if the user entered nothing, continue
