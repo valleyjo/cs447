@@ -65,14 +65,40 @@ array:	.byte
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0	
 
+row1_color:	1
+ro11_size:	12
+
 .text
 
 main:
 	# -------------
 	# Let's do this
 	# -------------
-	li 	$s0, 31			# x
-	li	$s1, 56			# y
+	
+	# set up the random number generator
+	#li	$v0, 30		# get time in milliseconds (as a 64-bit value)
+	#syscall
+
+	#move	$t0, $a0	# save the lower 32-bits of time
+
+	# seed the random generator (just once)
+	#li	$a0, 1		# random generator id (will be used later)
+	#move 	$a1, $t0	# seed from time
+	#li	$v0, 40		# seed random number generator syscall
+	#syscall
+
+	#li	$a0, 1		# as said, this id is the same as random generator id
+	#li	$a1, 10		# upper bound of the range
+	#li	$v0, 42		# load the instruction for get ranndom number
+	#syscall			# get the random number
+
+	# $a0 now holds the random number
+	#sb	$a0, 0($s0)	# store the velocity
+	
+	li 	$s0, 31			# Store the initial x position of the frog
+	li	$s1, 56			# Store the initial y position of the frog
+
+	# Generate the initial playing field
 	jal	draw_field
 	
 game_loop:	 
@@ -82,17 +108,24 @@ game_loop:
 	
 	jal	_getKeyPress
 	
-	move	$t0, $v0
-	li	$t1, 0x42
-	beq	$t0, $t1, exit		# if the user pressed the center button,
+	move	$s2, $v0
+	li	$t0, 0x42
+	beq	$s2, $t0, exit		# if the user pressed the center button,
 					# exit
 	
-	beqz	$t0, game_loop		# if the user entered nothing, continue
+	# perform all game operations (generate stones, move stones, etc)
+	li	$a0, 30
+	li	$a1, 2
+	jal	move_right
+	
+	
+	beqz	$s2, game_loop		# if the user entered nothing, continue
 					# with the game 
 	
-move_left:
-	li	$t1, 0xE2
-	bne	$t0, $t1, move_right	# proceed only if the user pressed the
+input_move_left:
+	li	$t0, 0xE2
+	bne	$s2, $t0, input_move_right
+					# proceed only if the user pressed the
 					# 'move left' button
 	
 	addi	$s0, $s0, -2		# Adjust the top corner of the frog
@@ -100,18 +133,18 @@ move_left:
 	
 	j	game_loop
 	
-move_right:
-	li	$t1, 0xE3
-	bne	$t0, $t1 move_up	# proceed only if the user pressed the
+input_move_right:
+	li	$t0, 0xE3
+	bne	$s2, $t0 input_move_up	# proceed only if the user pressed the
 					# 'move right' button
 	addi	$s0, $s0, 2		# Move the top corner of the frog
 	jal	move_frog
 	
 	j	game_loop
 
-move_up:
-	li	$t1, 0xE0
-	bne	$t0, $t1 move_down	# proceed only if the user pressed the
+input_move_up:
+	li	$t0, 0xE0
+	bne	$s2, $t0 input_move_down# proceed only if the user pressed the
 					# 'move up' button
 
 	addi	$s1, $s1, -2
@@ -119,16 +152,90 @@ move_up:
 	
 	j	game_loop
 	
-move_down:
+input_move_down:
 	# proceed only if the user pressed the 'move down' button. At this point,
 	# down is the only non-checked value, so it must be down.
-	addi	$s1, $s1, 2
+	addi	$s1, $s1, 2		# move the top right corner of the frog
 	jal	move_frog
 	
 	j	game_loop
 	
 exit:	li	$v0, 10
 	syscall
+
+
+#------------------------------------------------------------------------------               
+# void move_right(int row, int new_pixel)
+#   shit a row across the screen by one pixel. The new pixel is taken from the
+#   argument $a1
+#
+#  Register usages:
+#    $s2 = previous
+#    $s3 = count
+#    $s4 = next
+#    $s5 = current row (y value)
+#
+# arguments: $a0 the row to move, $a1 the pixel to add to the row being shifted
+# trashes: $s2 => prev, $s3 => count, $s4 => next, $s5 => current row, $s6 => new pixel color
+# returns: none
+#------------------------------------------------------------------------------
+move_right:
+
+	# --------
+	# Prologue
+	# --------
+	addi	$sp, $sp, -24
+	sw	$ra, 0($sp)
+	sw	$s2, 4($sp)
+	sw	$s3, 8($sp)
+	sw	$s4, 12($sp)
+	sw	$s5, 16($sp)
+	sw	$s6, 20($sp)
+	
+	move	$s6, $a1	# store the new pixel to be added
+	li	$s3, 0		# $s3 is the count variable
+	
+	move	$a1, $a0	# x's are col's of the LED display
+	li	$a0, 0		# y's are row's of the LED display
+	jal	_getLED		# _getLED($a0, $a1) => _getLED(int row, int col)
+	
+	move	$s2, $v0	# store the value of the previous LED
+	
+	move	$a2, $s6
+	jal	_setLED
+	
+move_right_loop:
+	li	$t0, 64
+	bge	$s3, $t0, move_right_end	#loop executes while col's < 64
+	
+	move	$a0, $s3	# col number (x value) = count
+				# row number (y value) stays the same
+	jal	_getLED		# get the LED at x = count & y = $a1 (which is the row number 
+				# from the intial argument)
+	
+	move	$s4, $v0	# move the LED value into the next variable
+	
+	move	$a2, $s2	# move the previous LED into the argument list for _setLED
+	jal	_setLED		# the coordinates are the same from the past call of _getLED
+				# except this time we are setting it not saving it
+	move	$s2, $s4	# previous = next
+	addi	$s3, $s3, 1	# add 1 to the current column
+	
+	j	move_right_loop	# loop executes while column number is < 64
+	
+move_right_end:
+	# --------
+	# Epilogue
+	# --------
+	lw	$ra, 0($sp)
+	lw	$s2, 4($sp)
+	lw	$s3, 8($sp)
+	lw	$s4, 12($sp)
+	lw	$s5, 16($sp)
+	lw	$s6, 20($sp)
+	addi	$sp, $sp, 24
+	
+	jr	$ra
 
 #------------------------------------------------------------------------------               
 # void move_frog()
@@ -141,9 +248,9 @@ exit:	li	$v0, 10
 #------------------------------------------------------------------------------
 move_frog:
 
-	# -------------------
+	# --------
 	# Prologue
-	# -------------------
+	# --------
 	addi	$sp, $sp, -8
 	sw	$ra, 0($sp)
 
@@ -174,9 +281,9 @@ move_frog:
 	addi	$a2, $0,  3
 	jal	_setLED	
 			
-	# -------------------
+	# --------
 	# Epilogue
-	# -------------------
+	# --------
 	lw	$ra, 0($sp)
 	addi	$sp, $sp, 8
 	
@@ -190,9 +297,9 @@ move_frog:
 # returns: none
 #------------------------------------------------------------------------------
 draw_field:
-	# -------------------
+	# --------
 	# Prologue
-	# -------------------
+	# --------
 	addi	$sp, $sp, -12
 	sw	$ra, 0($sp)
 	sw	$s0, 4($sp)
