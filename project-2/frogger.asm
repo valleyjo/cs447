@@ -68,13 +68,18 @@ array:	.byte
 .text
 
 main:
-	# --------
+	# -------------
 	# Let's do this
-	# --------
-	
+	# -------------
+	li 	$s0, 31			# x
+	li	$s1, 56			# y
 	jal	draw_field
 	
-game_loop:	
+game_loop:	 
+	#li	$a0, 200
+	#li	$v0, 32
+	#syscall				# Pause for 200 miliseconds
+	
 	jal	_getKeyPress
 	
 	move	$t0, $v0
@@ -90,9 +95,8 @@ move_left:
 	bne	$t0, $t1, move_right	# proceed only if the user pressed the
 					# 'move left' button
 	
-	li	$v0, 1
-	li	$a0, 1
-	syscall
+	addi	$s0, $s0, -2		# Adjust the top corner of the frog
+	jal	move_frog
 	
 	j	game_loop
 	
@@ -100,9 +104,8 @@ move_right:
 	li	$t1, 0xE3
 	bne	$t0, $t1 move_up	# proceed only if the user pressed the
 					# 'move right' button
-	li	$v0, 1
-	li	$a0, 2
-	syscall
+	addi	$s0, $s0, 2		# Move the top corner of the frog
+	jal	move_frog
 	
 	j	game_loop
 
@@ -110,24 +113,74 @@ move_up:
 	li	$t1, 0xE0
 	bne	$t0, $t1 move_down	# proceed only if the user pressed the
 					# 'move up' button
-	li	$v0, 1
-	li	$a0, 3
-	syscall
+
+	addi	$s1, $s1, -2
+	jal	move_frog
 	
 	j	game_loop
 	
 move_down:
 	# proceed only if the user pressed the 'move down' button. At this point,
 	# down is the only non-checked value, so it must be down.
-	li	$v0, 1
-	li	$a0, 4
-	syscall
+	addi	$s1, $s1, 2
+	jal	move_frog
 	
 	j	game_loop
 	
 exit:	li	$v0, 10
 	syscall
 
+#------------------------------------------------------------------------------               
+# void move_frog()
+#   the frog gets redrawn based on it's top left corner. To move the frog,
+#   adjust the top left corner by changing $s0 and $s1 to the new location
+#
+# arguments: none
+# trashes: none
+# returns: none
+#------------------------------------------------------------------------------
+move_frog:
+
+	# -------------------
+	# Prologue
+	# -------------------
+	addi	$sp, $sp, -8
+	sw	$ra, 0($sp)
+
+	#move	$a0, $s0
+	#li	$v0, 1
+	#3syscall
+	
+	#move	$a0, $s1
+	#syscall
+
+	addi	$a0, $s0, 0	# (x, y) = green
+	addi	$a1, $s1, 0
+	addi	$a2, $0,  3
+	jal	_setLED
+	
+	addi	$a0, $s0, 1	# (x + 1, y) = green 
+	addi	$a1, $s1, 0
+	addi	$a2, $0,  3
+	jal	_setLED
+	
+	addi	$a0, $s0, 1 	# (x + 1, y + 1) = green
+	addi	$a1, $s1, 1
+	addi	$a2, $0,  3
+	jal	_setLED
+	
+	addi	$a0, $s0, 0	# (x, y + 1) = green
+	addi	$a1, $s1, 1
+	addi	$a2, $0,  3
+	jal	_setLED	
+			
+	# -------------------
+	# Epilogue
+	# -------------------
+	lw	$ra, 0($sp)
+	addi	$sp, $sp, 8
+	
+	jr	$ra
 #------------------------------------------------------------------------------               
 # void draw_field()
 #   draws the playing field represented by the array memory location
@@ -143,8 +196,7 @@ draw_field:
 	addi	$sp, $sp, -12
 	sw	$ra, 0($sp)
 	sw	$s0, 4($sp)
-	sw	$s1, 8($sp)	
-	# -------------------
+	sw	$s1, 8($sp)
 
 	li	$s0, 0	
 rows:
