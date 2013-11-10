@@ -107,7 +107,6 @@ main:
 
 	jal	generate_velocities
 
-
 	reset_game:
 	li 	$s0, 31			# Store the initial x position of the frog
 	li	$s1, 56			# Store the initial y position of the frog
@@ -115,7 +114,11 @@ main:
 	# Generate the initial playing field
 	jal	draw_field
 	
-	game_loop:	 
+	game_loop:
+	
+	# Check to see if the frog has moved outside the game board
+	jal	check_boundries
+		 
 	li	$a0, 200
 	li	$v0, 32
 	syscall				# Pause for 200 miliseconds
@@ -243,6 +246,7 @@ end_stone_moves:
 					# proceed only if the user pressed the
 					# 'move left' button
 	
+	jal	check_death
 	jal	clean_trail
 	addi	$s0, $s0, -2		# Adjust the top corner of the frog
 	jal	move_frog
@@ -301,10 +305,38 @@ game_over:
 	li	$v0, 10
 	syscall
 
+
+#------------------------------------------------------------------------------               
+# void check_boundries()
+#   Called every game cycle and every time a frog moves
+#
+#  Register usages: $t0
+#
+# arguments:
+# trashes: $t0, $t1
+# returns: none
+#------------------------------------------------------------------------------
+check_boundries:
+
+	# check death by going outside the game board
+	
+	# if frog goes off the left side of the screen
+	li	$t0, 1
+	bgt	$t0, $s0, death
+	
+	# if the frog goes off the right side of the screen
+	li	$t0, 62
+	bgt	$s0, $t0, death
+	
+	# if the frog goes off the bottom of the screen
+	bgt	$s1, $t0, death
+
+	jr	$ra
+
 #------------------------------------------------------------------------------               
 # void clean_trail()
 #   Called every time a frog has moved. Sets the current position to lava color
-#	or black color, whichever is more approperiate.
+#	or black color, whichever is required.
 #
 #  Register usages:
 #
@@ -321,22 +353,22 @@ clean_trail:
 	blt 	$s1, $t0, clean_trail_stone
 	
 	# change the LED's to black to clear the frog's position
-	addi	$a0, $s0, 0	# (x, y) = green
+	addi	$a0, $s0, 0	# (x, y) = black
 	addi	$a1, $s1, 0
 	addi	$a2, $0,  0
 	jal	_setLED
 	
-	addi	$a0, $s0, 1	# (x + 1, y) = green 
+	addi	$a0, $s0, 1	# (x + 1, y) = black 
 	addi	$a1, $s1, 0
 	addi	$a2, $0,  0
 	jal	_setLED
 	
-	addi	$a0, $s0, 1 	# (x + 1, y + 1) = green
+	addi	$a0, $s0, 1 	# (x + 1, y + 1) = black
 	addi	$a1, $s1, 1
 	addi	$a2, $0,  0
 	jal	_setLED
 	
-	addi	$a0, $s0, 0	# (x, y + 1) = green
+	addi	$a0, $s0, 0	# (x, y + 1) = black
 	addi	$a1, $s1, 1
 	addi	$a2, $0,  0
 	jal	_setLED	
@@ -345,22 +377,22 @@ clean_trail:
 
 	# If the frog is in the lava, change the led's to lava colored
 	clean_trail_stone:
-	addi	$a0, $s0, 0	# (x, y) = green
+	addi	$a0, $s0, 0	# (x, y) = yellow
 	addi	$a1, $s1, 0
 	addi	$a2, $0,  2
 	jal	_setLED
 	
-	addi	$a0, $s0, 1	# (x + 1, y) = green 
+	addi	$a0, $s0, 1	# (x + 1, y) = yellow 
 	addi	$a1, $s1, 0
 	addi	$a2, $0,  2
 	jal	_setLED
 	
-	addi	$a0, $s0, 1 	# (x + 1, y + 1) = green
+	addi	$a0, $s0, 1 	# (x + 1, y + 1) = yellow
 	addi	$a1, $s1, 1
 	addi	$a2, $0,  2
 	jal	_setLED
 	
-	addi	$a0, $s0, 0	# (x, y + 1) = green
+	addi	$a0, $s0, 0	# (x, y + 1) = yellow
 	addi	$a1, $s1, 1
 	addi	$a2, $0,  2
 	jal	_setLED
@@ -405,18 +437,6 @@ check_death:
 	
 	li	$t0, 1
 	beq	$v0, $t0, death
-	
-	# check death by going outside the game board
-	
-	# if frog goes off the left side of the screen
-	bgt	$0, $s0, death
-	
-	# if the frog goes off the right side of the screen
-	li	$t0, 62
-	bgt	$s0, $t0, death
-	
-	# if the frog goes off the bottom of the screen
-	bgt	$s1, $t0, death
 	
 	lw	$ra, 0($sp)
 	addi	$sp, $sp, 4
@@ -1399,6 +1419,9 @@ move_frog:
 	
 	# Check to see if the frog is moving to it's death
 	jal	check_death
+	
+	# Check to see if the frog is moving off of the game board
+	jal	check_boundries
 	
 	# change the LED's to green to signify the frog's position
 	addi	$a0, $s0, 0	# (x, y) = green
