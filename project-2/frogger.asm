@@ -299,6 +299,81 @@ game_over:
 	syscall
 
 #------------------------------------------------------------------------------               
+# void check_win()
+#   Called every time a frog has moved
+#
+#  Register usages:
+#	$t0 => player score
+#	$t1 => address in memory of player score
+#
+# arguments:
+# trashes: $t0, $t1
+# returns: none
+#------------------------------------------------------------------------------
+check_win:
+	li	$t0, 6
+	bne	$s1, $t0, check_win_end
+	
+	# if the top two frog locations correspond to any winning locations, call win
+	# othrwise call death
+	
+	# first lilly pad
+	li	$t0, 0
+	beq	$s0, $t0, win
+	
+	li	$t0, 1
+	beq	$s0, $t0, win
+	
+	li	$t0, 2
+	beq	$s0, $t0, win
+	
+	li	$t0, 3
+	beq	$s0, $t0, win
+
+	li	$t0, 4
+	beq	$s0, $t0, win
+	
+	# Second lilly pad
+	li	$t0, 28
+	beq	$s0, $t0, win
+	
+	li	$t0, 29
+	beq	$s0, $t0, win
+	
+	li	$t0, 30
+	beq	$s0, $t0, win
+	
+	li	$t0, 31
+	beq	$s0, $t0, win
+	
+	li	$t0, 32
+	beq	$s0, $t0, win
+	
+	# Third lilly pad
+	li	$t0, 58
+	beq	$s0, $t0, win
+	
+	li	$t0, 59
+	beq	$s0, $t0, win
+	
+	li	$t0, 60
+	beq	$s0, $t0, win
+	
+	li	$t0, 61
+	beq	$s0, $t0, win
+	
+	li	$t0, 62
+	beq	$s0, $t0, win
+	
+	# if the player has landed in row 6 and has not landed on any of
+	# the designated spaces he/she is dead
+	j	death
+	
+	check_win_end:
+	jr	$ra
+
+
+#------------------------------------------------------------------------------               
 # void win()
 #   Called when frog has landed on a lilly pad 
 #
@@ -329,11 +404,6 @@ win:
 	syscall
 	
 	j	reset_game
-	
-	
-	
-
-
 
 #------------------------------------------------------------------------------               
 # void death()
@@ -1198,6 +1268,9 @@ move_frog:
 	#move	$a0, $s1
 	#syscall
 	
+	# Check to see if the frog landed on a lilly pad
+	jal	check_win
+	
 	# Check to see if the frog is moving to it's death (one of the LED's is red)
 	addi	$a0, $s0, 0
 	addi	$a1, $s1, 0
@@ -1217,6 +1290,7 @@ move_frog:
 	
 	li	$t0, 1
 	beq	$v0, $t0, death
+	
 	
 	addi	$a2, $0,  3
 	jal	_setLED
