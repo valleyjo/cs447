@@ -65,9 +65,31 @@ array:	.byte
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0	
 
-stone1_velocity: .byte 3
-stone1_color:	 .byte 2
-stone1_length:	 .byte 12
+velocities:	.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+
+stone1_v: 	.byte 3
+stone1_color:	.byte 2
+stone1_length:	.byte 8
+
+stone2_v: 	.byte 3
+stone2_color:	.byte 2
+stone2_length:	.byte 12
+
+stone3_v: 	.byte 3
+stone3_color:	.byte 2
+stone3_length:	.byte 8
+
+stone4_v: 	.byte 3
+stone4_color:	.byte 2
+stone4_length:	.byte 12
+
+stone5_v: 	.byte 3
+stone5_color:	.byte 2
+stone5_length:	.byte 8
+
+stone6_v: 	.byte 3
+stone6_color:	.byte 2
+stone6_length:	.byte 12
 
 .text
 
@@ -75,26 +97,6 @@ main:
 	# -------------
 	# Let's do this
 	# -------------
-	
-	# set up the random number generator
-	#li	$v0, 30		# get time in milliseconds (as a 64-bit value)
-	#syscall
-
-	#move	$t0, $a0	# save the lower 32-bits of time
-
-	# seed the random generator (just once)
-	#li	$a0, 1		# random generator id (will be used later)
-	#move 	$a1, $t0	# seed from time
-	#li	$v0, 40		# seed random number generator syscall
-	#syscall
-
-	#li	$a0, 1		# as said, this id is the same as random generator id
-	#li	$a1, 10		# upper bound of the range
-	#li	$v0, 42		# load the instruction for get ranndom number
-	#syscall			# get the random number
-
-	# $a0 now holds the random number
-	#sb	$a0, 0($s0)	# store the velocity
 	
 	li 	$s0, 31			# Store the initial x position of the frog
 	li	$s1, 56			# Store the initial y position of the frog
@@ -116,13 +118,13 @@ game_loop:
 	
 	# perform all game operations (generate stones, move stones, etc)
 	
-	lb	$s2, stone1_velocity	#load the velocity of stone 1 into $s2
+	lb	$s2, stone1_v		#load the velocity of stone 1 into $s2
 
 stone1_velocity_loop:
 	beqz	$s2, stone2_velocity_loop # if the stone has already moved over 'velocity' times,
 					# begin to move stone 2
 
-	li	$a0, 50			# load the top row of stone 1
+	li	$a0, 8			# load the top row of stone 1
 	la	$a1, stone1_length	# load the length of stone 1
 	la	$a2, stone1_color	# load the color of stone 1 (will be red when no stone is being generated)
 	jal	move_stone_right	# move the entire stone right by one pixel
@@ -177,6 +179,181 @@ input_move_down:
 	
 exit:	li	$v0, 10
 	syscall
+	
+#------------------------------------------------------------------------------               
+# void generate_velocities()
+#   Fill the velocity array and generate a velocity for each row of stones
+#
+#  Register usages:
+#    $s2 = row length
+#    $s3 = address of the new color value. Gets updated at the end to be 1 (lava).
+#
+# arguments: $a0 the row to move, $a1 the color to add
+# trashes: $t0, $s2, $s3
+# returns: none
+#------------------------------------------------------------------------------
+generate_velocities:
+
+	# 1) Find the velocities for each stone's row
+	
+	# set up the random number generator
+	li	$v0, 30		# get time in milliseconds (as a 64-bit value)
+	syscall
+
+	move	$t0, $a0	# save the lower 32-bits of time
+
+	# seed the random generator (just once)
+	li	$a0, 1		# random generator id (will be used later)
+	move 	$a1, $t0	# seed from time
+	li	$v0, 40		# seed random number generator syscall
+	syscall
+
+	li	$a0, 1		# as said, this id is the same as random generator id
+	li	$a1, 3		# upper bound of the range
+	li	$v0, 42		# load the instruction for get ranndom number
+	syscall			# get the random number
+
+	# $a0 now holds the random number
+	sb	$a0, stone1_v	# store the velocity for stone 1
+	
+	li	$a0, 1		# as said, this id is the same as random generator id
+	li	$a1, 3		# upper bound of the range
+	li	$v0, 42		# load the instruction for get ranndom number
+	syscall			# get the random number
+
+	# $a0 now holds the random number
+	sb	$a0, stone2_v	# store the velocity for stone 2
+	
+	li	$a0, 1		# as said, this id is the same as random generator id
+	li	$a1, 3		# upper bound of the range
+	li	$v0, 42		# load the instruction for get ranndom number
+	syscall			# get the random number
+
+	# $a0 now holds the random number
+	sb	$a0, stone3_v	# store the velocity for stone 2
+	
+	li	$a0, 1		# as said, this id is the same as random generator id
+	li	$a1, 3		# upper bound of the range
+	li	$v0, 42		# load the instruction for get ranndom number
+	syscall			# get the random number
+
+	# $a0 now holds the random number
+	sb	$a0, stone3_v	# store the velocity for stone 4
+	
+	li	$a0, 1		# as said, this id is the same as random generator id
+	li	$a1, 3		# upper bound of the range
+	li	$v0, 42		# load the instruction for get ranndom number
+	syscall			# get the random number
+
+	# $a0 now holds the random number
+	sb	$a0, stone4_v	# store the velocity for stone 4
+
+	li	$a0, 1		# as said, this id is the same as random generator id
+	li	$a1, 3		# upper bound of the range
+	li	$v0, 42		# load the instruction for get ranndom number
+	syscall			# get the random number
+
+	# $a0 now holds the random number
+	sb	$a0, stone5_v	# store the velocity for stone 5
+	
+	li	$a0, 1		# as said, this id is the same as random generator id
+	li	$a1, 3		# upper bound of the range
+	li	$v0, 42		# load the instruction for get ranndom number
+	syscall			# get the random number
+
+	# $a0 now holds the random number
+	sb	$a0, stone5_v	# store the velocity for stone 5
+	
+	li	$a0, 1		# as said, this id is the same as random generator id
+	li	$a1, 3		# upper bound of the range
+	li	$v0, 42		# load the instruction for get ranndom number
+	syscall			# get the random number
+
+	# $a0 now holds the random number
+	sb	$a0, stone6_v	# store the velocity for stone 6
+
+#------------------------------------------------------------------------------ 
+# 
+# PART 2) fill the velocity array which is used to track where the frog moves while
+#	he/she is on a rock
+#
+#------------------------------------------------------------------------------ 
+
+	la	$t0, velocities
+	addi	$t0, $t0, 8
+	
+	lb	$t1, stone1_v
+	sb	$t1, 0($t0)
+	sb	$t1, 1($t0)
+	sb	$t1, 2($t0)
+	sb	$t1, 3($t0)
+	sb	$t1, 4($t0)
+	sb	$t1, 5($t0)
+	sb	$t1, 6($t0)
+	sb	$t1, 7($t0)
+	
+	addi	$t0, $t0, 8
+	
+	lb	$t1, stone2_v
+	sb	$t1, 0($t0)
+	sb	$t1, 1($t0)
+	sb	$t1, 2($t0)
+	sb	$t1, 3($t0)
+	sb	$t1, 4($t0)
+	sb	$t1, 5($t0)
+	sb	$t1, 6($t0)
+	sb	$t1, 7($t0)
+	
+	addi	$t0, $t0, 8
+	
+	lb	$t1, stone3_v
+	sb	$t1, 0($t0)
+	sb	$t1, 1($t0)
+	sb	$t1, 2($t0)
+	sb	$t1, 3($t0)
+	sb	$t1, 4($t0)
+	sb	$t1, 5($t0)
+	sb	$t1, 6($t0)
+	sb	$t1, 7($t0)
+	
+	addi	$t0, $t0, 8
+	
+	lb	$t1, stone4_v
+	sb	$t1, 0($t0)
+	sb	$t1, 1($t0)
+	sb	$t1, 2($t0)
+	sb	$t1, 3($t0)
+	sb	$t1, 4($t0)
+	sb	$t1, 5($t0)
+	sb	$t1, 6($t0)
+	sb	$t1, 7($t0)
+	
+	addi	$t0, $t0, 8
+	
+	lb	$t1, stone5_v
+	sb	$t1, 0($t0)
+	sb	$t1, 1($t0)
+	sb	$t1, 2($t0)
+	sb	$t1, 3($t0)
+	sb	$t1, 4($t0)
+	sb	$t1, 5($t0)
+	sb	$t1, 6($t0)
+	sb	$t1, 7($t0)
+	
+	addi	$t0, $t0, 8
+	
+	lb	$t1, stone6_v
+	sb	$t1, 0($t0)
+	sb	$t1, 1($t0)
+	sb	$t1, 2($t0)
+	sb	$t1, 3($t0)
+	sb	$t1, 4($t0)
+	sb	$t1, 5($t0)
+	sb	$t1, 6($t0)
+	sb	$t1, 7($t0)
+	
+	jr	$ra
+	
 
 #------------------------------------------------------------------------------               
 # void move_stone_right(int row, int address_of_stone_length, int address_of_color)
@@ -243,6 +420,16 @@ move_stone_right:
 	move	$a0, $s4	# load the row number + 1 into $a1
 	move	$a1, $s3	# load the color into $a1
 	jal	move_right	# move row $a0 + 5 over 1 and use $a1 as the new color
+	
+	addi	$s4, $s4, 1	# increase the row number by 1
+	move	$a0, $s4	# load the row number + 1 into $a1
+	move	$a1, $s3	# load the color into $a1
+	jal	move_right	# move row $a0 + 6 over 1 and use $a1 as the new color
+	
+	addi	$s4, $s4, 1	# increase the row number by 1
+	move	$a0, $s4	# load the row number + 1 into $a1
+	move	$a1, $s3	# load the color into $a1
+	jal	move_right	# move row $a0 + 7 over 1 and use $a1 as the new color
 	
 	
 	addi	$s2, $s2, -1	# decrease the length remaining of the rock
