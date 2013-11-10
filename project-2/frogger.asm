@@ -243,6 +243,7 @@ end_stone_moves:
 					# proceed only if the user pressed the
 					# 'move left' button
 	
+	jal	clean_trail
 	addi	$s0, $s0, -2		# Adjust the top corner of the frog
 	jal	move_frog
 	
@@ -252,6 +253,7 @@ end_stone_moves:
 	li	$t0, 0xE3
 	bne	$s2, $t0 input_move_up	# proceed only if the user pressed the
 					# 'move right' button
+	jal	clean_trail
 	addi	$s0, $s0, 2		# Move the top corner of the frog
 	jal	move_frog
 	
@@ -261,7 +263,7 @@ end_stone_moves:
 	li	$t0, 0xE0
 	bne	$s2, $t0 input_move_down# proceed only if the user pressed the
 					# 'move up' button
-
+	jal	clean_trail
 	addi	$s1, $s1, -2
 	jal	move_frog
 	
@@ -270,6 +272,7 @@ end_stone_moves:
 	input_move_down:
 	# proceed only if the user pressed the 'move down' button. At this point,
 	# down is the only non-checked value, so it must be down.
+	jal	clean_trail
 	addi	$s1, $s1, 2		# move the top right corner of the frog
 	jal	move_frog
 	
@@ -297,6 +300,126 @@ game_over:
 	
 	li	$v0, 10
 	syscall
+
+#------------------------------------------------------------------------------               
+# void clean_trail()
+#   Called every time a frog has moved. Sets the current position to lava color
+#	or black color, whichever is more approperiate.
+#
+#  Register usages:
+#
+# arguments:
+# trashes: $t0, $t1
+# returns: none
+#------------------------------------------------------------------------------
+clean_trail:
+	# 
+	addi	$sp, $sp, -4
+	sw	$ra, 0($sp)
+	
+	li	$t0, 56
+	blt 	$s1, $t0, clean_trail_stone
+	
+	# change the LED's to black to clear the frog's position
+	addi	$a0, $s0, 0	# (x, y) = green
+	addi	$a1, $s1, 0
+	addi	$a2, $0,  0
+	jal	_setLED
+	
+	addi	$a0, $s0, 1	# (x + 1, y) = green 
+	addi	$a1, $s1, 0
+	addi	$a2, $0,  0
+	jal	_setLED
+	
+	addi	$a0, $s0, 1 	# (x + 1, y + 1) = green
+	addi	$a1, $s1, 1
+	addi	$a2, $0,  0
+	jal	_setLED
+	
+	addi	$a0, $s0, 0	# (x, y + 1) = green
+	addi	$a1, $s1, 1
+	addi	$a2, $0,  0
+	jal	_setLED	
+	
+	j	clean_trail_end
+
+	# If the frog is in the lava, change the led's to lava colored
+	clean_trail_stone:
+	addi	$a0, $s0, 0	# (x, y) = green
+	addi	$a1, $s1, 0
+	addi	$a2, $0,  2
+	jal	_setLED
+	
+	addi	$a0, $s0, 1	# (x + 1, y) = green 
+	addi	$a1, $s1, 0
+	addi	$a2, $0,  2
+	jal	_setLED
+	
+	addi	$a0, $s0, 1 	# (x + 1, y + 1) = green
+	addi	$a1, $s1, 1
+	addi	$a2, $0,  2
+	jal	_setLED
+	
+	addi	$a0, $s0, 0	# (x, y + 1) = green
+	addi	$a1, $s1, 1
+	addi	$a2, $0,  2
+	jal	_setLED
+	
+	clean_trail_end:
+	lw	$ra, 0($sp)
+	addi	$sp, $sp, 4
+	
+	jr	$ra
+
+
+#------------------------------------------------------------------------------               
+# void check_death()
+#   Called every time a frog has moved
+#
+#  Register usages:
+#	$t0 => player score
+#	$t1 => address in memory of player score
+#
+# arguments:
+# trashes: $t0, $t1
+# returns: none
+#------------------------------------------------------------------------------
+check_death:
+	addi	$sp, $sp, -4
+	sw	$ra, 0($sp)
+
+	# check death by lava
+	
+	# (x + y) = red ?
+	move	$a0, $s0
+	move	$a1, $s1
+	jal	_getLED
+	
+	li	$t0, 1
+	beq	$v0, $t0, death 
+
+	# (x + 1, y) = red ? 
+	addi	$a0, $s0, 1
+	addi	$a1, $s1, 0
+	jal	_getLED
+	
+	li	$t0, 1
+	beq	$v0, $t0, death
+	
+	# check death by going outside the game board
+	
+	# if frog goes off the left side of the screen
+	bgt	$0, $s0, death
+	
+	# if the frog goes off the right side of the screen
+	li	$t0, 62
+	bgt	$s0, $t0, death
+	
+	# if the frog goes off the bottom of the screen
+	bgt	$s1, $t0, death
+	
+	lw	$ra, 0($sp)
+	addi	$sp, $sp, 4
 
 #------------------------------------------------------------------------------               
 # void check_win()
@@ -1260,25 +1383,24 @@ move_frog:
 	# --------
 	addi	$sp, $sp, -8
 	sw	$ra, 0($sp)
-
+	
+	# -Debug-Print---
+	# print ("%d %d", frog.x, frog.y);
 	#move	$a0, $s0
 	#li	$v0, 1
 	#3syscall
 	
 	#move	$a0, $s1
 	#syscall
+	# ---------------
 	
 	# Check to see if the frog landed on a lilly pad
 	jal	check_win
 	
-	# Check to see if the frog is moving to it's death (one of the LED's is red)
-	addi	$a0, $s0, 0
-	addi	$a1, $s1, 0
-	jal	_getLED
+	# Check to see if the frog is moving to it's death
+	jal	check_death
 	
-	li	$t0, 1
-	beq	$v0, $t0, death 
-	
+	# change the LED's to green to signify the frog's position
 	addi	$a0, $s0, 0	# (x, y) = green
 	addi	$a1, $s1, 0
 	addi	$a2, $0,  3
@@ -1286,12 +1408,6 @@ move_frog:
 	
 	addi	$a0, $s0, 1	# (x + 1, y) = green 
 	addi	$a1, $s1, 0
-	jal	_getLED
-	
-	li	$t0, 1
-	beq	$v0, $t0, death
-	
-	
 	addi	$a2, $0,  3
 	jal	_setLED
 	
@@ -1303,8 +1419,8 @@ move_frog:
 	addi	$a0, $s0, 0	# (x, y + 1) = green
 	addi	$a1, $s1, 1
 	addi	$a2, $0,  3
-	jal	_setLED	
-			
+	jal	_setLED		
+	
 	# --------
 	# Epilogue
 	# --------
