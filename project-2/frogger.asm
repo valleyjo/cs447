@@ -137,7 +137,7 @@ main:
 	li	$a0, 8			# load the top row of stone 1
 	la	$a1, stone1_length	# load the length of stone 1
 	la	$a2, stone1_color	# load the color of stone 1 (will be red when no stone is being generated)
-	jal	move_stone_left	# move the entire stone right by one pixel
+	jal	move_stone_left		# move the entire stone right by one pixel
 	addi	$s3, $s3, -1		# subtract 1 from the velocity and do it again!
 	j	stone1_velocity_loop
 
@@ -1271,7 +1271,7 @@ move_left:
 	sw	$s6, 20($sp)
 	
 	move	$s6, $a1	# store the new pixel to be added
-	li	$s3, 64		# $s3 is the count variable
+	li	$s3, 63		# $s3 is the count variable
 	
 	move	$a1, $a0	# x's are col's of the LED display
 	li	$a0, 0		# y's are row's of the LED display
