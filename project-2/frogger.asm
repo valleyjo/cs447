@@ -194,8 +194,10 @@ exit:	li	$v0, 10
 #------------------------------------------------------------------------------
 generate_velocities:
 
-	# 1) Find the velocities for each stone's row
-	
+#------------------------------------------------------------------------------
+# PART 1) Find the velocities for each stone's row
+#------------------------------------------------------------------------------
+
 	# set up the random number generator
 	li	$v0, 30		# get time in milliseconds (as a 64-bit value)
 	syscall
@@ -279,9 +281,23 @@ generate_velocities:
 #
 #------------------------------------------------------------------------------ 
 
-	la	$t0, velocities
-	addi	$t0, $t0, 8
+	la	$t0, velocities	# load the address of the velocity array
 	
+	# proceeding downwards.....
+	
+	# upper black (safe) region
+	li	$t1, 0
+	sb	$t1, 0($t0)
+	sb	$t1, 1($t0)
+	sb	$t1, 2($t0)
+	sb	$t1, 3($t0)
+	sb	$t1, 4($t0)
+	sb	$t1, 5($t0)
+	sb	$t1, 6($t0)
+	sb	$t1, 7($t0)
+	
+	# Stone 1
+	addi	$t0, $t0, 8
 	lb	$t1, stone1_v
 	sb	$t1, 0($t0)
 	sb	$t1, 1($t0)
@@ -292,8 +308,8 @@ generate_velocities:
 	sb	$t1, 6($t0)
 	sb	$t1, 7($t0)
 	
+	# Stone 2
 	addi	$t0, $t0, 8
-	
 	lb	$t1, stone2_v
 	sb	$t1, 0($t0)
 	sb	$t1, 1($t0)
@@ -304,8 +320,8 @@ generate_velocities:
 	sb	$t1, 6($t0)
 	sb	$t1, 7($t0)
 	
+	# Stone 3
 	addi	$t0, $t0, 8
-	
 	lb	$t1, stone3_v
 	sb	$t1, 0($t0)
 	sb	$t1, 1($t0)
@@ -316,8 +332,8 @@ generate_velocities:
 	sb	$t1, 6($t0)
 	sb	$t1, 7($t0)
 	
+	# Stone 4
 	addi	$t0, $t0, 8
-	
 	lb	$t1, stone4_v
 	sb	$t1, 0($t0)
 	sb	$t1, 1($t0)
@@ -328,8 +344,8 @@ generate_velocities:
 	sb	$t1, 6($t0)
 	sb	$t1, 7($t0)
 	
+	# Stone 5
 	addi	$t0, $t0, 8
-	
 	lb	$t1, stone5_v
 	sb	$t1, 0($t0)
 	sb	$t1, 1($t0)
@@ -340,8 +356,8 @@ generate_velocities:
 	sb	$t1, 6($t0)
 	sb	$t1, 7($t0)
 	
+	# Stone 6
 	addi	$t0, $t0, 8
-	
 	lb	$t1, stone6_v
 	sb	$t1, 0($t0)
 	sb	$t1, 1($t0)
@@ -352,8 +368,19 @@ generate_velocities:
 	sb	$t1, 6($t0)
 	sb	$t1, 7($t0)
 	
-	jr	$ra
+	# Lower black (safe) region
+	addi	$t0, $t0, 8
+	li	$t1, 0
+	sb	$t1, 0($t0)
+	sb	$t1, 1($t0)
+	sb	$t1, 2($t0)
+	sb	$t1, 3($t0)
+	sb	$t1, 4($t0)
+	sb	$t1, 5($t0)
+	sb	$t1, 6($t0)
+	sb	$t1, 7($t0)
 	
+	jr	$ra	# return
 
 #------------------------------------------------------------------------------               
 # void move_stone_right(int row, int address_of_stone_length, int address_of_color)
