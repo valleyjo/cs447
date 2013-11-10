@@ -300,7 +300,7 @@ death:
 	sb	$t0, 0($t1)
 	
 	la	$a0, msg_lives_left
-	li	$v0, 10
+	li	$v0, 4
 	syscall
 	
 	move	$a0, $t0
