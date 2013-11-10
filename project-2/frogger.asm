@@ -67,7 +67,7 @@ array:	.byte
 
 velocities:	.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
-stone1_v: 	.byte 3
+stone1_v: 	.byte 1
 stone1_color:	.byte 2
 stone1_length:	.byte 8
 
@@ -75,19 +75,19 @@ stone2_v: 	.byte 3
 stone2_color:	.byte 2
 stone2_length:	.byte 12
 
-stone3_v: 	.byte 3
+stone3_v: 	.byte 6
 stone3_color:	.byte 2
 stone3_length:	.byte 8
 
-stone4_v: 	.byte 3
+stone4_v: 	.byte 9
 stone4_color:	.byte 2
 stone4_length:	.byte 12
 
-stone5_v: 	.byte 3
+stone5_v: 	.byte 12
 stone5_color:	.byte 2
 stone5_length:	.byte 8
 
-stone6_v: 	.byte 3
+stone6_v: 	.byte 15
 stone6_color:	.byte 2
 stone6_length:	.byte 12
 
@@ -97,6 +97,32 @@ main:
 	# -------------
 	# Let's do this
 	# -------------
+	
+	jal	generate_velocities
+	
+	li	$v0, 1
+	lb	$a0, stone1_v
+	syscall
+	
+	li	$v0, 1
+	lb	$a0, stone2_v
+	syscall
+	
+	li	$v0, 1
+	lb	$a0, stone3_v
+	syscall
+	
+	li	$v0, 1
+	lb	$a0, stone4_v
+	syscall
+	
+	li	$v0, 1
+	lb	$a0, stone5_v
+	syscall
+	
+	li	$v0, 1
+	lb	$a0, stone6_v
+	syscall
 	
 	li 	$s0, 31			# Store the initial x position of the frog
 	li	$s1, 56			# Store the initial y position of the frog
@@ -109,32 +135,99 @@ game_loop:
 	li	$v0, 32
 	syscall				# Pause for 200 miliseconds
 	
-	jal	_getKeyPress
-	
-	move	$s2, $v0
-	li	$t0, 0x42
-	beq	$s2, $t0, exit		# if the user pressed the center button,
-					# exit
-	
 	# perform all game operations (generate stones, move stones, etc)
 	
-	lb	$s2, stone1_v		#load the velocity of stone 1 into $s2
+	lb	$s3, stone1_v		#load the velocity of stone 1 into $s2
 
 stone1_velocity_loop:
-	beqz	$s2, stone2_velocity_loop # if the stone has already moved over 'velocity' times,
+	beqz	$s3, stone2_begin_move	# if the stone has already moved over 'velocity' times,
 					# begin to move stone 2
 
 	li	$a0, 8			# load the top row of stone 1
 	la	$a1, stone1_length	# load the length of stone 1
 	la	$a2, stone1_color	# load the color of stone 1 (will be red when no stone is being generated)
 	jal	move_stone_right	# move the entire stone right by one pixel
-	addi	$s2, $s2, -1		# subtract 1 from the velocity and do it again!
+	addi	$s3, $s3, -1		# subtract 1 from the velocity and do it again!
 	j	stone1_velocity_loop
-	
+
+stone2_begin_move:
+	lb	$s3, stone2_v
 	
 stone2_velocity_loop:
+	beqz	$s3, stone3_begin_move 	# if the stone has already moved over 'velocity' times,
+					# begin to move stone 2
+
+	li	$a0, 16			# load the top row of stone 2
+	la	$a1, stone2_length	# load the length of stone 2
+	la	$a2, stone2_color	# load the color of stone 2 (will be red when no stone is being generated)
+	jal	move_stone_right	# move the entire stone right by one pixel
+	addi	$s3, $s3, -1		# subtract 1 from the velocity and do it again!
+	j	stone2_velocity_loop
+
+stone3_begin_move:
+	lb	$s3, stone3_v
+
+stone3_velocity_loop:
+	beqz	$s3, stone4_begin_move	# if the stone has already moved over 'velocity' times,
+					# begin to move stone 2
+
+	li	$a0, 24			# load the top row of stone 3
+	la	$a1, stone3_length	# load the length of stone 3
+	la	$a2, stone3_color	# load the color of stone 3 (will be red when no stone is being generated)
+	jal	move_stone_right	# move the entire stone right by one pixel
+	addi	$s3, $s3, -1		# subtract 1 from the velocity and do it again!
+	j	stone3_velocity_loop
 	
+stone4_begin_move:
+	lb	$s3, stone4_v
 	
+stone4_velocity_loop:
+	beqz	$s3, stone5_begin_move	# if the stone has already moved over 'velocity' times,
+					# begin to move stone 2
+
+	li	$a0, 32			# load the top row of stone 4
+	la	$a1, stone4_length	# load the length of stone 4
+	la	$a2, stone4_color	# load the color of stone 4 (will be red when no stone is being generated)
+	jal	move_stone_right	# move the entire stone right by one pixel
+	addi	$s3, $s3, -1		# subtract 1 from the velocity and do it again!
+	j	stone4_velocity_loop
+
+stone5_begin_move:
+	lb	$s3, stone5_v
+
+stone5_velocity_loop:
+	beqz	$s3, stone6_begin_move # if the stone has already moved over 'velocity' times,
+					# begin to move stone 2
+
+	li	$a0, 40			# load the top row of stone 5
+	la	$a1, stone5_length	# load the length of stone 5
+	la	$a2, stone5_color	# load the color of stone 5 (will be red when no stone is being generated)
+	jal	move_stone_right	# move the entire stone right by one pixel
+	addi	$s3, $s3, -1		# subtract 1 from the velocity and do it again!
+	j	stone5_velocity_loop
+
+stone6_begin_move:
+	lb	$s3, stone6_v
+
+stone6_velocity_loop:
+	beqz	$s3, end_stone_moves	# if the stone has already moved over 'velocity' times,
+					# begin to move stone 2
+
+	li	$a0, 48			# load the top row of stone 6
+	la	$a1, stone6_length	# load the length of stone 6
+	la	$a2, stone6_color	# load the color of stone 6 (will be red when no stone is being generated)
+	jal	move_stone_right	# move the entire stone right by one pixel
+	addi	$s3, $s3, -1		# subtract 1 from the velocity and do it again!
+	j	stone6_velocity_loop
+	
+end_stone_moves:	
+
+	jal	_getKeyPress
+	
+	move	$s2, $v0
+	li	$t0, 0x42
+	beq	$s2, $t0, exit		# if the user pressed the center button,
+					# exit
 	
 	beqz	$s2, game_loop		# if the user entered nothing, continue
 					# with the game 
@@ -209,11 +302,13 @@ generate_velocities:
 	move 	$a1, $t0	# seed from time
 	li	$v0, 40		# seed random number generator syscall
 	syscall
+	addi	$a0, $a0, 1	# add 1 to ensure we don't get a zero velocity
 
 	li	$a0, 1		# as said, this id is the same as random generator id
 	li	$a1, 3		# upper bound of the range
 	li	$v0, 42		# load the instruction for get ranndom number
 	syscall			# get the random number
+	addi	$a0, $a0, 1	# add 1 to ensure we don't get a zero velocity
 
 	# $a0 now holds the random number
 	sb	$a0, stone1_v	# store the velocity for stone 1
@@ -222,6 +317,7 @@ generate_velocities:
 	li	$a1, 3		# upper bound of the range
 	li	$v0, 42		# load the instruction for get ranndom number
 	syscall			# get the random number
+	addi	$a0, $a0, 1	# add 1 to ensure we don't get a zero velocity
 
 	# $a0 now holds the random number
 	sb	$a0, stone2_v	# store the velocity for stone 2
@@ -230,6 +326,7 @@ generate_velocities:
 	li	$a1, 3		# upper bound of the range
 	li	$v0, 42		# load the instruction for get ranndom number
 	syscall			# get the random number
+	addi	$a0, $a0, 1	# add 1 to ensure we don't get a zero velocity
 
 	# $a0 now holds the random number
 	sb	$a0, stone3_v	# store the velocity for stone 2
@@ -238,14 +335,16 @@ generate_velocities:
 	li	$a1, 3		# upper bound of the range
 	li	$v0, 42		# load the instruction for get ranndom number
 	syscall			# get the random number
+	addi	$a0, $a0, 1	# add 1 to ensure we don't get a zero velocity
 
 	# $a0 now holds the random number
 	sb	$a0, stone3_v	# store the velocity for stone 4
 	
 	li	$a0, 1		# as said, this id is the same as random generator id
-	li	$a1, 3		# upper bound of the range
+	li	$a1, 2		# upper bound of the range
 	li	$v0, 42		# load the instruction for get ranndom number
 	syscall			# get the random number
+	addi	$a0, $a0, 1	# add 1 to ensure we don't get a zero velocity
 
 	# $a0 now holds the random number
 	sb	$a0, stone4_v	# store the velocity for stone 4
@@ -254,22 +353,25 @@ generate_velocities:
 	li	$a1, 3		# upper bound of the range
 	li	$v0, 42		# load the instruction for get ranndom number
 	syscall			# get the random number
+	addi	$a0, $a0, 1	# add 1 to ensure we don't get a zero velocity
 
 	# $a0 now holds the random number
 	sb	$a0, stone5_v	# store the velocity for stone 5
 	
 	li	$a0, 1		# as said, this id is the same as random generator id
-	li	$a1, 3		# upper bound of the range
+	li	$a1, 2		# upper bound of the range
 	li	$v0, 42		# load the instruction for get ranndom number
 	syscall			# get the random number
+	addi	$a0, $a0, 1	# add 1 to ensure we don't get a zero velocity
 
 	# $a0 now holds the random number
 	sb	$a0, stone5_v	# store the velocity for stone 5
 	
 	li	$a0, 1		# as said, this id is the same as random generator id
-	li	$a1, 3		# upper bound of the range
+	li	$a1, 2		# upper bound of the range
 	li	$v0, 42		# load the instruction for get ranndom number
 	syscall			# get the random number
+	addi	$a0, $a0, 1	# add 1 to ensure we don't get a zero velocity
 
 	# $a0 now holds the random number
 	sb	$a0, stone6_v	# store the velocity for stone 6
