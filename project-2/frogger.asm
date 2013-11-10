@@ -67,7 +67,10 @@ array:	.byte
 
 msg_game_over:	.asciiz "Game over!"
 msg_lives_left:	.asciiz "Lives left: "
+msg_newline:	.asciiz	"\n"
+msg_player_score: .asciiz "Your score is: "
 player_lives:	.byte	3
+player_score:	.word	0
 
 velocities:	.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
@@ -105,25 +108,26 @@ main:
 	jal	generate_velocities
 
 
-reset_game:
+	reset_game:
 	li 	$s0, 31			# Store the initial x position of the frog
 	li	$s1, 56			# Store the initial y position of the frog
 
 	# Generate the initial playing field
 	jal	draw_field
 	
-game_loop:	 
+	game_loop:	 
 	li	$a0, 200
 	li	$v0, 32
 	syscall				# Pause for 200 miliseconds
 	
 	# perform all game operations (generate stones, move stones, etc)
 
+
 #  Move all stones by their velocities
 # --------------------------------------	
 	lb	$s3, stone1_v		#load the velocity of stone 1 into $s2
 
-stone1_velocity_loop:
+	stone1_velocity_loop:
 	beqz	$s3, stone2_begin_move	# if the stone has already moved over 'velocity' times,
 					# begin to move stone 2
 
@@ -134,10 +138,10 @@ stone1_velocity_loop:
 	addi	$s3, $s3, -1		# subtract 1 from the velocity and do it again!
 	j	stone1_velocity_loop
 
-stone2_begin_move:
+	stone2_begin_move:
 	lb	$s3, stone2_v
 	
-stone2_velocity_loop:
+	stone2_velocity_loop:
 	beqz	$s3, stone3_begin_move 	# if the stone has already moved over 'velocity' times,
 					# begin to move stone 2
 
@@ -148,10 +152,10 @@ stone2_velocity_loop:
 	addi	$s3, $s3, -1		# subtract 1 from the velocity and do it again!
 	j	stone2_velocity_loop
 
-stone3_begin_move:
+	stone3_begin_move:
 	lb	$s3, stone3_v
 
-stone3_velocity_loop:
+	stone3_velocity_loop:
 	beqz	$s3, stone4_begin_move	# if the stone has already moved over 'velocity' times,
 					# begin to move stone 2
 
@@ -162,10 +166,10 @@ stone3_velocity_loop:
 	addi	$s3, $s3, -1		# subtract 1 from the velocity and do it again!
 	j	stone3_velocity_loop
 	
-stone4_begin_move:
+	stone4_begin_move:
 	lb	$s3, stone4_v
 	
-stone4_velocity_loop:
+	stone4_velocity_loop:
 	beqz	$s3, stone5_begin_move	# if the stone has already moved over 'velocity' times,
 					# begin to move stone 2
 
@@ -176,10 +180,10 @@ stone4_velocity_loop:
 	addi	$s3, $s3, -1		# subtract 1 from the velocity and do it again!
 	j	stone4_velocity_loop
 
-stone5_begin_move:
+	stone5_begin_move:
 	lb	$s3, stone5_v
 
-stone5_velocity_loop:
+	stone5_velocity_loop:
 	beqz	$s3, stone6_begin_move # if the stone has already moved over 'velocity' times,
 					# begin to move stone 2
 
@@ -190,10 +194,10 @@ stone5_velocity_loop:
 	addi	$s3, $s3, -1		# subtract 1 from the velocity and do it again!
 	j	stone5_velocity_loop
 
-stone6_begin_move:
+	stone6_begin_move:
 	lb	$s3, stone6_v
 
-stone6_velocity_loop:
+	stone6_velocity_loop:
 	beqz	$s3, end_stone_moves	# if the stone has already moved over 'velocity' times,
 					# begin to move stone 2
 
@@ -233,7 +237,7 @@ end_stone_moves:
 	beqz	$s2, game_loop		# if the user entered nothing, continue
 					# with the game 
 	
-input_move_left:
+	input_move_left:
 	li	$t0, 0xE2
 	bne	$s2, $t0, input_move_right
 					# proceed only if the user pressed the
@@ -244,7 +248,7 @@ input_move_left:
 	
 	j	game_loop
 	
-input_move_right:
+	input_move_right:
 	li	$t0, 0xE3
 	bne	$s2, $t0 input_move_up	# proceed only if the user pressed the
 					# 'move right' button
@@ -253,7 +257,7 @@ input_move_right:
 	
 	j	game_loop
 
-input_move_up:
+	input_move_up:
 	li	$t0, 0xE0
 	bne	$s2, $t0 input_move_down# proceed only if the user pressed the
 					# 'move up' button
@@ -263,7 +267,7 @@ input_move_up:
 	
 	j	game_loop
 	
-input_move_down:
+	input_move_down:
 	# proceed only if the user pressed the 'move down' button. At this point,
 	# down is the only non-checked value, so it must be down.
 	addi	$s1, $s1, 2		# move the top right corner of the frog
@@ -276,11 +280,60 @@ exit:	li	$v0, 10
 
 game_over:
 	la	$a0, msg_game_over
-	li	$v0, 10
+	li	$v0, 4
+	syscall
+	
+	la	$a0, msg_newline
+	li	$v0 4
+	syscall
+	
+	la	$a0, msg_player_score
+	li	$v0, 4
+	syscall
+	
+	lw	$a0, player_score
+	li	$v0, 1
 	syscall
 	
 	li	$v0, 10
 	syscall
+
+#------------------------------------------------------------------------------               
+# void win()
+#   Called when frog has landed on a lilly pad 
+#
+#  Register usages:
+#	$t0 => player score
+#	$t1 => address in memory of player score
+#
+# arguments:
+# trashes: $t0, $t1
+# returns: none
+#------------------------------------------------------------------------------
+win:
+	lw	$t0, player_score
+	addi	$t0, $t0, 100
+	
+	sw	$t0, player_score
+	
+	la	$a0, msg_player_score
+	li	$v0, 4
+	syscall
+	
+	move	$a0, $t0
+	li	$v0, 1
+	syscall
+	
+	la	$a0, msg_newline
+	li	$v0, 4
+	syscall
+	
+	j	reset_game
+	
+	
+	
+
+
 
 #------------------------------------------------------------------------------               
 # void death()
@@ -288,9 +341,11 @@ game_over:
 #	away a life
 #
 #  Register usages:
+#	$t0 => number of lives left
+#	$t1 => address in memory of player lives
 #
 # arguments:
-# trashes:
+# trashes: $t0, $t1
 # returns: none
 #------------------------------------------------------------------------------
 death:
@@ -306,6 +361,11 @@ death:
 	move	$a0, $t0
 	li	$v0, 1
 	syscall
+	
+	li	$v0, 4
+	la	$a0, msg_newline
+	syscall
+	
 	
 	beqz	$t0, game_over
 	
@@ -370,7 +430,7 @@ spawn_rocks:
 	la	$t0, stone1_length
 	sb	$a0, 0($t0)
 	
-spawn_stone_2:
+	spawn_stone_2:
 
 	la	$t0, stone2_color	# load the current stone 1 color
 	li	$t1, 2			# load system stone color
@@ -403,7 +463,7 @@ spawn_stone_2:
 	la	$t0, stone2_length
 	sb	$a0, 0($t0)
 
-spawn_stone_3:
+	spawn_stone_3:
 	la	$t0, stone3_color	# load the current stone 1 color
 	li	$t1, 2			# load system stone color
 	beq	$t0, $t1, spawn_stone_4	# if the stone's color is the stone color,
@@ -435,7 +495,7 @@ spawn_stone_3:
 	la	$t0, stone3_length
 	sb	$a0, 0($t0)
 	
-spawn_stone_4:
+	spawn_stone_4:
 	la	$t0, stone4_color	# load the current stone 1 color
 	li	$t1, 2			# load system stone color
 	beq	$t0, $t1, spawn_stone_5	# if the stone's color is the stone color,
@@ -467,7 +527,7 @@ spawn_stone_4:
 	la	$t0, stone4_length
 	sb	$a0, 0($t0)
 
-spawn_stone_5:
+	spawn_stone_5:
 	la	$t0, stone5_color	# load the current stone 1 color
 	li	$t1, 2			# load system stone color
 	beq	$t0, $t1, spawn_stone_6	# if the stone's color is the stone color,
@@ -499,7 +559,7 @@ spawn_stone_5:
 	la	$t0, stone5_length
 	sb	$a0, 0($t0)
 	
-spawn_stone_6:
+	spawn_stone_6:
 	la	$t0, stone6_color	# load the current stone 1 color
 	li	$t1, 2			# load system stone color
 	beq	$t0, $t1, spawn_stone_end	# if the stone's color is the stone color,
@@ -531,7 +591,7 @@ spawn_stone_6:
 	la	$t0, stone6_length
 	sb	$a0, 0($t0)
 	
-spawn_stone_end:
+	spawn_stone_end:
 	jr	$ra
 
 
@@ -848,11 +908,11 @@ move_stone_left:
 	# the rock has been fully introduced onto the screen, set the new color value to be 1 for lava
 	# consequentially in further movements, the lava will be moving over by 1 and appear to remain
 	# constant
-change_color:
+	change_color:
 	li	$t0, 1
 	sb	$t0, 0($a2)
 
-move_stone_left_end:
+	move_stone_left_end:
 	# --------
 	# Epilogue
 	# --------
@@ -953,11 +1013,11 @@ move_stone_right:
 	# the rock has been fully introduced onto the screen, set the new color value to be 1 for lava
 	# consequentially in further movements, the lava will be moving over by 1 and appear to remain
 	# constant
-right_change_color:
+	right_change_color:
 	li	$t0, 1
 	sb	$t0, 0($a2)
 
-move_stone_right_end:
+	move_stone_right_end:
 	# --------
 	# Epilogue
 	# --------
@@ -1009,7 +1069,7 @@ move_left:
 	move	$a2, $s6
 	jal	_setLED
 	
-move_left_loop:
+	move_left_loop:
 	beq	$s3, $0, move_left_end	#loop executes while col's > 64
 	
 	move	$a0, $s3	# col number (x value) = count
@@ -1027,7 +1087,7 @@ move_left_loop:
 	
 	j	move_left_loop	# loop executes while column number is > 0
 	
-move_left_end:
+	move_left_end:
 	# --------
 	# Epilogue
 	# --------
@@ -1081,7 +1141,7 @@ move_right:
 	move	$a2, $s6
 	jal	_setLED
 	
-move_right_loop:
+	move_right_loop:
 	li	$t0, 64
 	bge	$s3, $t0, move_right_end	#loop executes while col's < 64
 	
@@ -1100,7 +1160,7 @@ move_right_loop:
 	
 	j	move_right_loop	# loop executes while column number is < 64
 	
-move_right_end:
+	move_right_end:
 	# --------
 	# Epilogue
 	# --------
@@ -1336,5 +1396,5 @@ _getKeyPress:
 	lw	$t0, 0($t1)			# load the status
 	beq	$t0, $zero, _keypress_return	# no key pressed, return
 	lw	$v0, 4($t1)			# read the key pressed
-_keypress_return:
+	_keypress_return:
 	jr $ra
