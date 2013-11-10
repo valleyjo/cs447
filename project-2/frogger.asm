@@ -101,34 +101,9 @@ main:
 	# -------------
 	# Let's do this
 	# -------------
-	
+
 	jal	generate_velocities
-	
-	# -Debug-Print-------
-	#li	$v0, 1
-	#lb	$a0, stone1_v
-	#syscall
-	
-	#li	$v0, 1
-	#lb	$a0, stone2_v
-	#syscall
-	
-	#li	$v0, 1
-	#lb	$a0, stone3_v
-	#syscall
-	
-	#li	$v0, 1
-	#lb	$a0, stone4_v
-	#syscall
-	
-	#li	$v0, 1
-	#lb	$a0, stone5_v
-	#syscall
-	
-	#li	$v0, 1
-	#lb	$a0, stone6_v
-	#syscall
-	# -------------------
+
 
 reset_game:
 	li 	$s0, 31			# Store the initial x position of the frog
@@ -578,6 +553,14 @@ generate_velocities:
 # for each stone's row
 #-------------------------------
 
+	# PART 1) Find the velocities 
+# for each stone's row
+#-------------------------------
+
+	# PART 1) Find the velocities 
+# for each stone's row
+#-------------------------------
+
 	# set up the random number generator
 	li	$v0, 30		# get time in milliseconds (as a 64-bit value)
 	syscall
@@ -688,6 +671,8 @@ generate_velocities:
 	# Stone 1
 	addi	$t0, $t0, 8
 	lb	$t1, stone1_v
+	not	$t1, $t1	# invert the stone's velocity to use with the frog's movements
+	addi	$t1, $t1, 1
 	sb	$t1, 0($t0)
 	sb	$t1, 1($t0)
 	sb	$t1, 2($t0)
@@ -712,6 +697,8 @@ generate_velocities:
 	# Stone 3
 	addi	$t0, $t0, 8
 	lb	$t1, stone3_v
+	not	$t1, $t1
+	addi	$t1, $t1, 1	# invert the stone's velocity to use with the frog's movements
 	sb	$t1, 0($t0)
 	sb	$t1, 1($t0)
 	sb	$t1, 2($t0)
@@ -736,6 +723,8 @@ generate_velocities:
 	# Stone 5
 	addi	$t0, $t0, 8
 	lb	$t1, stone5_v
+	not	$t1, $t1
+	addi	$t1, $t1, 1
 	sb	$t1, 0($t0)
 	sb	$t1, 1($t0)
 	sb	$t1, 2($t0)
