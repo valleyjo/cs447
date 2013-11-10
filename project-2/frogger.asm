@@ -235,6 +235,11 @@ end_stone_moves:
 	lb	$t1, 0($t0)
 	
 	add	$s0, $s0, $t1
+	
+#            Spawn new rocks
+# -------------------------------------
+	jal	spawn_rocks
+
 
 #            Get User Input
 # -------------------------------------
@@ -288,7 +293,231 @@ input_move_down:
 	
 exit:	li	$v0, 10
 	syscall
+
+#------------------------------------------------------------------------------               
+# void spawn_rocks()
+#   Spawn a new rock if necessiary. Rocks are spwaned by placing a 2 in a rock's
+#   respective color bit which gets moved and repicated by the move_rock functions
+#   The length is also randomly generated.
+#
+#  Register usages:
+#    $s2 = row length
+#    $s3 = address of the new color value. Gets updated at the end to be 1 (lava).
+#
+# arguments: $a0 the row to move, $a1 the color to add
+# trashes: $t0, $s2, $s3
+# returns: none
+#------------------------------------------------------------------------------
+spawn_rocks:
+
+	# set up the random number generator
+	li	$v0, 30		# get time in milliseconds (as a 64-bit value)
+	syscall
+
+	move	$t0, $a0	# save the lower 32-bits of time
+
+	# seed the random generator (just once)
+	li	$a0, 1		# random generator id (will be used later)
+	move 	$a1, $t0	# seed from time
+	li	$v0, 40		# seed random number generator syscall
+	syscall
+
+	la	$t0, stone1_color	# load the current stone 1 color
+	li	$t1, 2			# load system stone color
+	beq	$t0, $t1, spawn_stone_2	# if the stone's color is the stone color,
+					# skip the potential to spawn a stone
 	
+	# stones have a 1/10 change of spawning
+	
+	li	$a0, 1		# as said, this id is the same as random generator id
+	li	$a1, 10		# upper bound of the range
+	li	$v0, 42		# load the instruction for get ranndom number
+	syscall			# get the random number
+				# $a0 now holds the random number
+
+	bne	$0, $a0, spawn_stone_2	# if the random number is equal to zero,
+					# we spawn a stone
+	
+	li	$t1, 2
+	sb	$t1, 0($t0)	# store 2 in stone1_color
+	
+	# generate a number for the length of the stone
+	
+	li	$a0, 1		# as said, this id is the same as random generator id
+	li	$a1, 4		# upper bound of the range
+	li	$v0, 42		# load the instruction for get ranndom number
+	syscall			# get the random number
+				# $a0 now holds the random number
+	addi	$a0, $a0, 8
+	
+	la	$t0, stone1_length
+	sb	$a0, 0($t0)
+	
+spawn_stone_2:
+
+	la	$t0, stone2_color	# load the current stone 1 color
+	li	$t1, 2			# load system stone color
+	beq	$t0, $t1, spawn_stone_3	# if the stone's color is the stone color,
+					# skip the potential to spawn a stone
+	
+	# stones have a 1/10 change of spawning
+	
+	li	$a0, 1		# as said, this id is the same as random generator id
+	li	$a1, 10		# upper bound of the range
+	li	$v0, 42		# load the instruction for get ranndom number
+	syscall			# get the random number
+				# $a0 now holds the random number
+
+	bne	$0, $a0, spawn_stone_3	# if the random number is equal to zero,
+					# we spawn a stone
+	
+	li	$t1, 2
+	sb	$t1, 0($t0)	# store 2 in stone1_color
+	
+	# generate a number for the length of the stone
+	
+	li	$a0, 1		# as said, this id is the same as random generator id
+	li	$a1, 4		# upper bound of the range
+	li	$v0, 42		# load the instruction for get ranndom number
+	syscall			# get the random number
+				# $a0 now holds the random number
+	addi	$a0, $a0, 8
+	
+	la	$t0, stone2_length
+	sb	$a0, 0($t0)
+
+spawn_stone_3:
+	la	$t0, stone3_color	# load the current stone 1 color
+	li	$t1, 2			# load system stone color
+	beq	$t0, $t1, spawn_stone_4	# if the stone's color is the stone color,
+					# skip the potential to spawn a stone
+	
+	# stones have a 1/10 change of spawning
+	
+	li	$a0, 1		# as said, this id is the same as random generator id
+	li	$a1, 10		# upper bound of the range
+	li	$v0, 42		# load the instruction for get ranndom number
+	syscall			# get the random number
+				# $a0 now holds the random number
+
+	bne	$0, $a0, spawn_stone_4	# if the random number is equal to zero,
+					# we spawn a stone
+	
+	li	$t1, 2
+	sb	$t1, 0($t0)	# store 2 in stone1_color
+	
+	# generate a number for the length of the stone
+	
+	li	$a0, 1		# as said, this id is the same as random generator id
+	li	$a1, 4		# upper bound of the range
+	li	$v0, 42		# load the instruction for get ranndom number
+	syscall			# get the random number
+				# $a0 now holds the random number
+	addi	$a0, $a0, 8
+	
+	la	$t0, stone3_length
+	sb	$a0, 0($t0)
+	
+spawn_stone_4:
+	la	$t0, stone4_color	# load the current stone 1 color
+	li	$t1, 2			# load system stone color
+	beq	$t0, $t1, spawn_stone_5	# if the stone's color is the stone color,
+					# skip the potential to spawn a stone
+	
+	# stones have a 1/10 change of spawning
+	
+	li	$a0, 1		# as said, this id is the same as random generator id
+	li	$a1, 10		# upper bound of the range
+	li	$v0, 42		# load the instruction for get ranndom number
+	syscall			# get the random number
+				# $a0 now holds the random number
+
+	bne	$0, $a0, spawn_stone_5	# if the random number is equal to zero,
+					# we spawn a stone
+	
+	li	$t1, 2
+	sb	$t1, 0($t0)	# store 2 in stone1_color
+	
+	# generate a number for the length of the stone
+	
+	li	$a0, 1		# as said, this id is the same as random generator id
+	li	$a1, 4		# upper bound of the range
+	li	$v0, 42		# load the instruction for get ranndom number
+	syscall			# get the random number
+				# $a0 now holds the random number
+	addi	$a0, $a0, 8
+	
+	la	$t0, stone4_length
+	sb	$a0, 0($t0)
+
+spawn_stone_5:
+	la	$t0, stone5_color	# load the current stone 1 color
+	li	$t1, 2			# load system stone color
+	beq	$t0, $t1, spawn_stone_6	# if the stone's color is the stone color,
+					# skip the potential to spawn a stone
+	
+	# stones have a 1/10 change of spawning
+	
+	li	$a0, 1		# as said, this id is the same as random generator id
+	li	$a1, 10		# upper bound of the range
+	li	$v0, 42		# load the instruction for get ranndom number
+	syscall			# get the random number
+				# $a0 now holds the random number
+
+	bne	$0, $a0, spawn_stone_6	# if the random number is equal to zero,
+					# we spawn a stone
+	
+	li	$t1, 2
+	sb	$t1, 0($t0)	# store 2 in stone1_color
+	
+	# generate a number for the length of the stone
+	
+	li	$a0, 1		# as said, this id is the same as random generator id
+	li	$a1, 4		# upper bound of the range
+	li	$v0, 42		# load the instruction for get ranndom number
+	syscall			# get the random number
+				# $a0 now holds the random number
+	addi	$a0, $a0, 8
+	
+	la	$t0, stone5_length
+	sb	$a0, 0($t0)
+	
+spawn_stone_6:
+	la	$t0, stone6_color	# load the current stone 1 color
+	li	$t1, 2			# load system stone color
+	beq	$t0, $t1, spawn_stone_end	# if the stone's color is the stone color,
+					# skip the potential to spawn a stone
+	
+	# stones have a 1/10 change of spawning
+	
+	li	$a0, 1		# as said, this id is the same as random generator id
+	li	$a1, 10		# upper bound of the range
+	li	$v0, 42		# load the instruction for get ranndom number
+	syscall			# get the random number
+				# $a0 now holds the random number
+
+	bne	$0, $a0, spawn_stone_end	# if the random number is equal to zero,
+					# we spawn a stone
+	
+	li	$t1, 2
+	sb	$t1, 0($t0)	# store 2 in stone1_color
+	
+	# generate a number for the length of the stone
+	
+	li	$a0, 1		# as said, this id is the same as random generator id
+	li	$a1, 4		# upper bound of the range
+	li	$v0, 42		# load the instruction for get ranndom number
+	syscall			# get the random number
+				# $a0 now holds the random number
+	addi	$a0, $a0, 8
+	
+	la	$t0, stone6_length
+	sb	$a0, 0($t0)
+	
+spawn_stone_end:
+	jr	$ra
+
+
 #------------------------------------------------------------------------------               
 # void generate_velocities()
 #   Fill the velocity array and generate a velocity for each row of stones
