@@ -65,6 +65,10 @@ array:	.byte
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0	
 
+msg_game_over:	.asciiz "Game over!"
+msg_lives_left:	.asciiz "Lives left: "
+player_lives:	.byte	3
+
 velocities:	.byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
 stone1_v: 	.byte 1
@@ -125,7 +129,8 @@ main:
 	#lb	$a0, stone6_v
 	#syscall
 	# -------------------
-	
+
+reset_game:
 	li 	$s0, 31			# Store the initial x position of the frog
 	li	$s1, 56			# Store the initial y position of the frog
 
@@ -293,6 +298,43 @@ input_move_down:
 	
 exit:	li	$v0, 10
 	syscall
+
+game_over:
+	la	$a0, msg_game_over
+	li	$v0, 10
+	syscall
+	
+	li	$v0, 10
+	syscall
+
+#------------------------------------------------------------------------------               
+# void death()
+#   Called when the frog has died. R.I.P. frog. Resets the game board and takes 
+#	away a life
+#
+#  Register usages:
+#
+# arguments:
+# trashes:
+# returns: none
+#------------------------------------------------------------------------------
+death:
+	lb	$t0, player_lives
+	addi	$t0, $t0, -1
+	la	$t1, player_lives
+	sb	$t0, 0($t1)
+	
+	la	$a0, msg_lives_left
+	li	$v0, 10
+	syscall
+	
+	move	$a0, $t0
+	li	$v0, 1
+	syscall
+	
+	beqz	$t0, game_over
+	
+	j	reset_game
 
 #------------------------------------------------------------------------------               
 # void spawn_rocks()
@@ -531,7 +573,6 @@ spawn_stone_end:
 # returns: none
 #------------------------------------------------------------------------------
 generate_velocities:
-
 
 # PART 1) Find the velocities 
 # for each stone's row
@@ -1107,7 +1148,15 @@ move_frog:
 	
 	#move	$a0, $s1
 	#syscall
-
+	
+	# Check to see if the frog is moving to it's death (one of the LED's is red)
+	addi	$a0, $s0, 0
+	addi	$a1, $s1, 0
+	jal	_getLED
+	
+	li	$t0, 1
+	beq	$v0, $t0, death 
+	
 	addi	$a0, $s0, 0	# (x, y) = green
 	addi	$a1, $s1, 0
 	addi	$a2, $0,  3
@@ -1115,6 +1164,11 @@ move_frog:
 	
 	addi	$a0, $s0, 1	# (x + 1, y) = green 
 	addi	$a1, $s1, 0
+	jal	_getLED
+	
+	li	$t0, 1
+	beq	$v0, $t0, death
+	
 	addi	$a2, $0,  3
 	jal	_setLED
 	
