@@ -100,29 +100,31 @@ main:
 	
 	jal	generate_velocities
 	
-	li	$v0, 1
-	lb	$a0, stone1_v
-	syscall
+	# -Debug-Print-------
+	#li	$v0, 1
+	#lb	$a0, stone1_v
+	#syscall
 	
-	li	$v0, 1
-	lb	$a0, stone2_v
-	syscall
+	#li	$v0, 1
+	#lb	$a0, stone2_v
+	#syscall
 	
-	li	$v0, 1
-	lb	$a0, stone3_v
-	syscall
+	#li	$v0, 1
+	#lb	$a0, stone3_v
+	#syscall
 	
-	li	$v0, 1
-	lb	$a0, stone4_v
-	syscall
+	#li	$v0, 1
+	#lb	$a0, stone4_v
+	#syscall
 	
-	li	$v0, 1
-	lb	$a0, stone5_v
-	syscall
+	#li	$v0, 1
+	#lb	$a0, stone5_v
+	#syscall
 	
-	li	$v0, 1
-	lb	$a0, stone6_v
-	syscall
+	#li	$v0, 1
+	#lb	$a0, stone6_v
+	#syscall
+	# -------------------
 	
 	li 	$s0, 31			# Store the initial x position of the frog
 	li	$s1, 56			# Store the initial y position of the frog
@@ -136,7 +138,9 @@ game_loop:
 	syscall				# Pause for 200 miliseconds
 	
 	# perform all game operations (generate stones, move stones, etc)
-	
+
+#  Move all stones by their velocities
+# --------------------------------------	
 	lb	$s3, stone1_v		#load the velocity of stone 1 into $s2
 
 stone1_velocity_loop:
@@ -146,7 +150,7 @@ stone1_velocity_loop:
 	li	$a0, 8			# load the top row of stone 1
 	la	$a1, stone1_length	# load the length of stone 1
 	la	$a2, stone1_color	# load the color of stone 1 (will be red when no stone is being generated)
-	jal	move_stone_right	# move the entire stone right by one pixel
+	jal	move_stone_left	# move the entire stone right by one pixel
 	addi	$s3, $s3, -1		# subtract 1 from the velocity and do it again!
 	j	stone1_velocity_loop
 
@@ -174,7 +178,7 @@ stone3_velocity_loop:
 	li	$a0, 24			# load the top row of stone 3
 	la	$a1, stone3_length	# load the length of stone 3
 	la	$a2, stone3_color	# load the color of stone 3 (will be red when no stone is being generated)
-	jal	move_stone_right	# move the entire stone right by one pixel
+	jal	move_stone_left		# move the entire stone right by one pixel
 	addi	$s3, $s3, -1		# subtract 1 from the velocity and do it again!
 	j	stone3_velocity_loop
 	
@@ -202,7 +206,7 @@ stone5_velocity_loop:
 	li	$a0, 40			# load the top row of stone 5
 	la	$a1, stone5_length	# load the length of stone 5
 	la	$a2, stone5_color	# load the color of stone 5 (will be red when no stone is being generated)
-	jal	move_stone_right	# move the entire stone right by one pixel
+	jal	move_stone_left	# move the entire stone right by one pixel
 	addi	$s3, $s3, -1		# subtract 1 from the velocity and do it again!
 	j	stone5_velocity_loop
 
@@ -220,8 +224,20 @@ stone6_velocity_loop:
 	addi	$s3, $s3, -1		# subtract 1 from the velocity and do it again!
 	j	stone6_velocity_loop
 	
-end_stone_moves:	
+end_stone_moves:
 
+# Update the frog's position with the
+# movement of the rocks
+# -------------------------------------
+	la	$t0, velocities
+	add	$t0, $t0, $s1
+	
+	lb	$t1, 0($t0)
+	
+	add	$s0, $s0, $t1
+
+#            Get User Input
+# -------------------------------------
 	jal	_getKeyPress
 	
 	move	$s2, $v0
@@ -287,9 +303,10 @@ exit:	li	$v0, 10
 #------------------------------------------------------------------------------
 generate_velocities:
 
-#------------------------------------------------------------------------------
-# PART 1) Find the velocities for each stone's row
-#------------------------------------------------------------------------------
+
+# PART 1) Find the velocities 
+# for each stone's row
+#-------------------------------
 
 	# set up the random number generator
 	li	$v0, 30		# get time in milliseconds (as a 64-bit value)
@@ -376,12 +393,12 @@ generate_velocities:
 	# $a0 now holds the random number
 	sb	$a0, stone6_v	# store the velocity for stone 6
 
-#------------------------------------------------------------------------------ 
-# 
-# PART 2) fill the velocity array which is used to track where the frog moves while
-#	he/she is on a rock
-#
-#------------------------------------------------------------------------------ 
+ 
+# PART 2) fill the velocity array 
+# which is used to track where 
+# the frog moves while he/she is 
+# on a rock
+#-------------------------------
 
 	la	$t0, velocities	# load the address of the velocity array
 	
@@ -485,6 +502,111 @@ generate_velocities:
 	jr	$ra	# return
 
 #------------------------------------------------------------------------------               
+# void move_stone_left(int row, int address_of_stone_length, int address_of_color)
+#   move a stone with length 'length' to the left one pixel
+#	$a0 = row, $a1 = row length, $a2 = address of color to introduce into the playing field
+#
+#  Register usages:
+#    $s2 = row length
+#    $s3 = address of the new color value. Gets updated at the end to be 1 (lava).
+#
+# arguments: $a0 the row to move, $a1 the color to add
+# trashes: $t0, $s2, $s3
+# returns: none
+#------------------------------------------------------------------------------
+move_stone_left:
+	
+	# --------
+	# Prologue
+	# --------
+	addi	$sp, $sp -16
+	sw	$ra, 0($sp)
+	sw	$s2, 4($sp)
+	sw	$s3, 8($sp)
+	sw	$s4, 12($sp)
+	
+	lb	$s2, 0($a1)	# $s2 = stone_length
+	addi	$t0, $s2, -1
+	sb	$t0, 0($a1)
+	
+	lb	$s3, 0($a2)	# load the value of the new color as a constant argument for the movement of
+				# the stone
+	move	$s4, $a0
+				
+	beq	$t0, $0, change_color
+
+#move_stone_right_loop:	# when every pixel i nthe stone's length has been shifted over once, we branch
+#	beqz	$s2, move_stone_right_end
+	
+	addi	$a0, $s4, 0	# load the initial row number
+	move	$a1, $s3	# load the color into $a1
+	jal	move_left	# move row $a0 over 1 and use $a1 as the new color
+	
+	addi	$s4, $s4, 1	# increase the row number by 1
+	move	$a0, $s4	# load the row number + 1 into $a1
+	move	$a1, $s3	# load the color into $a1
+	jal	move_left	# move row $a0 + 1 over 1 and use $a1 as the new color
+
+	addi	$s4, $s4, 1	# increase the row number by 1
+	move	$a0, $s4	# load the row number + 1 into $a1
+	move	$a1, $s3	# load the color into $a1
+	jal	move_left	# move row $a0 + 2 over 1 and use $a1 as the new color
+	
+	addi	$s4, $s4, 1	# increase the row number by 1
+	move	$a0, $s4	# load the row number + 1 into $a1
+	move	$a1, $s3	# load the color into $a1
+	jal	move_left	# move row $a0 + 3 over 1 and use $a1 as the new color
+	
+	addi	$s4, $s4, 1	# increase the row number by 1
+	move	$a0, $s4	# load the row number + 1 into $a1
+	move	$a1, $s3	# load the color into $a1
+	jal	move_left	# move row $a0 + 4 over 1 and use $a1 as the new color
+	
+	addi	$s4, $s4, 1	# increase the row number by 1
+	move	$a0, $s4	# load the row number + 1 into $a1
+	move	$a1, $s3	# load the color into $a1
+	jal	move_left	# move row $a0 + 5 over 1 and use $a1 as the new color
+	
+	addi	$s4, $s4, 1	# increase the row number by 1
+	move	$a0, $s4	# load the row number + 1 into $a1
+	move	$a1, $s3	# load the color into $a1
+	jal	move_left	# move row $a0 + 6 over 1 and use $a1 as the new color
+	
+	addi	$s4, $s4, 1	# increase the row number by 1
+	move	$a0, $s4	# load the row number + 1 into $a1
+	move	$a1, $s3	# load the color into $a1
+	jal	move_left	# move row $a0 + 7 over 1 and use $a1 as the new color
+	
+	
+	addi	$s2, $s2, -1	# decrease the length remaining of the rock
+				# when this values reaches 0, all rows of the rock will be completly 
+				# shifted over by 1 pixel
+
+	#j	move_stone_right_loop
+	j	move_stone_left_end
+	
+
+	# the rock has been fully introduced onto the screen, set the new color value to be 1 for lava
+	# consequentially in further movements, the lava will be moving over by 1 and appear to remain
+	# constant
+change_color:
+	li	$t0, 1
+	sb	$t0, 0($a2)
+
+move_stone_left_end:
+	# --------
+	# Epilogue
+	# --------
+	lw	$ra, 0($sp)
+	lw	$s2, 4($sp)
+	lw	$s3, 8($sp)
+	lw	$s4, 12($sp)
+	addi	$sp, $sp, 12
+	
+	jr	$ra
+
+
+#------------------------------------------------------------------------------               
 # void move_stone_right(int row, int address_of_stone_length, int address_of_color)
 #   move a stone with length 'length' to the right one pixel
 #	$a0 = row, $a1 = row length, $a2 = address of color to introduce into the playing field
@@ -516,7 +638,7 @@ move_stone_right:
 				# the stone
 	move	$s4, $a0
 				
-	beq	$t0, $0, change_color
+	beq	$t0, $0, right_change_color
 
 #move_stone_right_loop:	# when every pixel i nthe stone's length has been shifted over once, we branch
 #	beqz	$s2, move_stone_right_end
@@ -572,7 +694,7 @@ move_stone_right:
 	# the rock has been fully introduced onto the screen, set the new color value to be 1 for lava
 	# consequentially in further movements, the lava will be moving over by 1 and appear to remain
 	# constant
-change_color:
+right_change_color:
 	li	$t0, 1
 	sb	$t0, 0($a2)
 
@@ -585,6 +707,78 @@ move_stone_right_end:
 	lw	$s3, 8($sp)
 	lw	$s4, 12($sp)
 	addi	$sp, $sp, 12
+	
+	jr	$ra
+
+#------------------------------------------------------------------------------               
+# void move_left(int row, int new_pixel)
+#   shit a row across the screen by one pixel. The new pixel is taken from the
+#   argument $a1
+#
+#  Register usages:
+#    $s2 = previous
+#    $s3 = count
+#    $s4 = next
+#    $s5 = current row (y value)
+#
+# arguments: $a0 the row to move, $a1 the pixel to add to the row being shifted
+# trashes: $s2 => prev, $s3 => count, $s4 => next, $s5 => current row, $s6 => new pixel color
+# returns: none
+#------------------------------------------------------------------------------
+move_left:
+
+	# --------
+	# Prologue
+	# --------
+	addi	$sp, $sp, -24
+	sw	$ra, 0($sp)
+	sw	$s2, 4($sp)
+	sw	$s3, 8($sp)
+	sw	$s4, 12($sp)
+	sw	$s5, 16($sp)
+	sw	$s6, 20($sp)
+	
+	move	$s6, $a1	# store the new pixel to be added
+	li	$s3, 64		# $s3 is the count variable
+	
+	move	$a1, $a0	# x's are col's of the LED display
+	li	$a0, 0		# y's are row's of the LED display
+	jal	_getLED		# _getLED($a0, $a1) => _getLED(int row, int col)
+	
+	move	$s2, $v0	# store the value of the previous LED
+	
+	move	$a2, $s6
+	jal	_setLED
+	
+move_left_loop:
+	beq	$s3, $0, move_left_end	#loop executes while col's > 64
+	
+	move	$a0, $s3	# col number (x value) = count
+				# row number (y value) stays the same
+	jal	_getLED		# get the LED at x = count & y = $a1 (which is the row number 
+				# from the intial argument)
+	
+	move	$s4, $v0	# move the LED value into the next variable
+	
+	move	$a2, $s2	# move the previous LED into the argument list for _setLED
+	jal	_setLED		# the coordinates are the same from the past call of _getLED
+				# except this time we are setting it not saving it
+	move	$s2, $s4	# previous = next
+	addi	$s3, $s3, -1	# add 1 to the current column
+	
+	j	move_left_loop	# loop executes while column number is > 0
+	
+move_left_end:
+	# --------
+	# Epilogue
+	# --------
+	lw	$ra, 0($sp)
+	lw	$s2, 4($sp)
+	lw	$s3, 8($sp)
+	lw	$s4, 12($sp)
+	lw	$s5, 16($sp)
+	lw	$s6, 20($sp)
+	addi	$sp, $sp, 24
 	
 	jr	$ra
 
