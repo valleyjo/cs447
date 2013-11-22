@@ -321,7 +321,7 @@ check_boundries:
 	# check death by going outside the game board
 	
 	# if frog goes off the left side of the screen
-	li	$t0, 1
+	li	$t0, 2
 	bgt	$t0, $s0, death
 	
 	# if the frog goes off the right side of the screen
@@ -345,7 +345,7 @@ check_boundries:
 # returns: none
 #------------------------------------------------------------------------------
 clean_trail:
-	# 
+	 
 	addi	$sp, $sp, -4
 	sw	$ra, 0($sp)
 	
